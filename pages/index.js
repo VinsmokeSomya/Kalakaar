@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { SendHorizontal, LoaderCircle, Trash2 } from "lucide-react";
+import { SendHorizontal, LoaderCircle, Trash2, X } from "lucide-react";
 import Head from "next/head";
 
 export default function Home() {
@@ -11,6 +11,9 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [customApiKey, setCustomApiKey] = useState("");
 
   // Load background image when generatedImage changes
   useEffect(() => {
@@ -173,13 +176,15 @@ export default function Home() {
       // Create request payload
       const requestPayload = {
         prompt,
-        drawingData
+        drawingData,
+        customApiKey  // Add the custom API key to the payload if it exists
       };
       
       // Log the request payload (without the full image data for brevity)
       console.log("Request payload:", {
         ...requestPayload,
-        drawingData: drawingData ? `${drawingData.substring(0, 50)}... (truncated)` : null
+        drawingData: drawingData ? `${drawingData.substring(0, 50)}... (truncated)` : null,
+        customApiKey: customApiKey ? "**********" : null
       });
       
       // Send the drawing and prompt to the API
@@ -204,14 +209,39 @@ export default function Home() {
         setGeneratedImage(imageUrl);
       } else {
         console.error("Failed to generate image:", data.error);
-        alert("Failed to generate image. Please try again.");
+        
+        // Check if the error is related to quota exhaustion or other API errors
+        if (data.error && (
+          data.error.includes("Resource has been exhausted") || 
+          data.error.includes("quota") ||
+          response.status === 429 ||
+          response.status === 500
+        )) {
+          setErrorMessage(data.error);
+          setShowErrorModal(true);
+        } else {
+          alert("Failed to generate image. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Error submitting drawing:", error);
-      alert("An error occurred. Please try again.");
+      setErrorMessage(error.message || "An unexpected error occurred.");
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Close the error modal
+  const closeErrorModal = () => {
+    setShowErrorModal(false);
+  };
+
+  // Handle the custom API key submission
+  const handleApiKeySubmit = (e) => {
+    e.preventDefault();
+    setShowErrorModal(false);
+    // Will use the customApiKey state in the next API call
   };
 
   // Add touch event prevention function
@@ -343,6 +373,62 @@ export default function Home() {
           </div>
         </form>
       </main>
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-gray-700">Failed to generate</h3>
+              <button 
+                onClick={closeErrorModal}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            
+            <form onSubmit={handleApiKeySubmit} className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                This space is pretty popular... add your own Gemini API key from  <a 
+                href="https://ai.google.dev/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Google AI Studio
+              </a>:
+
+               
+              </label>
+              <input
+                type="text"
+                value={customApiKey}
+                onChange={(e) => setCustomApiKey(e.target.value)}
+                placeholder="API Key..."
+                className="w-full p-3 border border-gray-300 rounded mb-4 font-mono text-sm"
+                required
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeErrorModal}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm bg-black text-white rounded hover:bg-gray-800"
+                >
+                  Use My API Key
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );

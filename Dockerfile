@@ -32,10 +32,6 @@ RUN if [ -f next.config.js ]; then \
       echo "/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  output: 'standalone'\n};\n\nmodule.exports = nextConfig;" > next.config.js; \
     fi
 
-# Set environment variables from app.yaml
-ENV GEMINI_API_KEY="AIzaSyBZqvjHhfLn_XzGYkNCWRA0PNQ6r2CUy_Y"
-ENV GCP_CLIENT_EMAIL="trudyp@google.com"
-
 # Build the application
 RUN npm run build
 
@@ -54,10 +50,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Set environment variables from app.yaml
-ENV GEMINI_API_KEY="AIzaSyBZqvjHhfLn_XzGYkNCWRA0PNQ6r2CUy_Y"
-ENV GCP_CLIENT_EMAIL="trudyp@google.com"
 
 # Switch to non-root user
 USER nextjs
