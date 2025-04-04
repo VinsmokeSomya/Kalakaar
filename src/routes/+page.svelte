@@ -7,6 +7,7 @@
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
+  import ColorPalette from '$lib/ColorPalette.svelte'; // Import the new component
 
   // --- Theme Store --- 
   const theme = writable<'light' | 'dark'>('light'); // Default to light
@@ -72,6 +73,33 @@
   let generatedImageDataUrl: string | null = $state(null); // Use $state
   let isLoading = $state(false);     // Use $state
   let errorMsg = $state('');       // Use $state
+
+  // --- Canvas Size State ---
+  type AspectRatioOption = { label: string; value: string; class: string; title: string }; // value can be string now
+  const aspectRatios: AspectRatioOption[] = [
+    { label: '16:9', value: 'video', class: 'aspect-video', title: 'Widescreen (16:9)' },
+    { label: '1:1', value: 'square', class: 'aspect-square', title: 'Square (1:1)' },
+    { label: '4:3', value: '4/3', class: 'aspect-[4/3]', title: 'Standard (4:3)' },
+    { label: '3:2', value: '3/2', class: 'aspect-[3/2]', title: 'Photography (3:2)' },
+    { label: '21:9', value: '21/9', class: 'aspect-[21/9]', title: 'Cinematic (21:9)' },
+    { label: '2:1', value: '2/1', class: 'aspect-[2/1]', title: 'Landscape (2:1)' },
+    { label: '10:5', value: '10/5', class: 'aspect-[10/5]', title: 'Portrait (10:5)' },
+    { label: '3:1', value: '3/1', class: 'aspect-[3/1]', title: 'Landscape (3:1)' },
+    { label: '4:2', value: '4/2', class: 'aspect-[4/2]', title: 'Landscape (4:2)' },
+  ];
+  let currentAspectRatio = $state<AspectRatioOption>(aspectRatios[0]); // Default to 16:9
+
+  function changeAspectRatio(newRatio: AspectRatioOption) {
+    if (newRatio.value !== currentAspectRatio.value) {
+      currentAspectRatio = newRatio;
+      // Clear canvas when ratio changes to avoid distortion/unexpected drawing
+      canvasComponent?.clearCanvas(); 
+      // Optional: clear AI output too if desired
+      // generatedText = '';
+      // generatedImageDataUrl = null;
+    }
+  }
+  // --- End Canvas Size State ---
 
   // --- Keyboard Shortcuts --- 
   $effect(() => {
@@ -279,186 +307,181 @@
        <!-- Controls Styling -->
        <div class="w-full mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-wrap justify-center items-center gap-x-5 gap-y-3">
           
-          <!-- Tool Selection Buttons -->
-          <div class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg p-1">
-            <button
-              onclick={() => currentTool = 'pen'}
-              class:bg-indigo-100={currentTool === 'pen'}
-              class:dark:bg-indigo-900={currentTool === 'pen'}
-              class:text-indigo-700={currentTool === 'pen'}
-              class:dark:text-indigo-300={currentTool === 'pen'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Pen Tool"  
-              title="Pen Tool (P)"
-            >
-              <Pen class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentTool = 'eraser'}
-              class:bg-indigo-100={currentTool === 'eraser'}
-              class:dark:bg-indigo-900={currentTool === 'eraser'}
-              class:text-indigo-700={currentTool === 'eraser'}
-              class:dark:text-indigo-300={currentTool === 'eraser'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Eraser Tool"
-              title="Eraser Tool (E)"
-            >
-              <Eraser class="w-5 h-5"/>
-            </button>
-          </div>
+          <!-- NEW: Tools Box Container -->
+          <div class="p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 shadow-sm flex flex-row items-start gap-3"> 
+            <!-- Tool Selection Buttons (Vertical Layout, Left Side, with Box and Label) -->
+            <div class="flex flex-col items-start gap-1">
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Tool:</span>
+              <div class="flex flex-col gap-2 p-1 border border-gray-300 dark:border-gray-600 rounded-lg">
+                <button
+                  onclick={() => currentTool = 'pen'}
+                  class:bg-indigo-100={currentTool === 'pen'}
+                  class:dark:bg-indigo-900={currentTool === 'pen'}
+                  class:text-indigo-700={currentTool === 'pen'}
+                  class:dark:text-indigo-300={currentTool === 'pen'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Pen Tool"  
+                  title="Pen Tool (P)"
+                >
+                  <Pen class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentTool = 'eraser'}
+                  class:bg-indigo-100={currentTool === 'eraser'}
+                  class:dark:bg-indigo-900={currentTool === 'eraser'}
+                  class:text-indigo-700={currentTool === 'eraser'}
+                  class:dark:text-indigo-300={currentTool === 'eraser'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Eraser Tool"
+                  title="Eraser Tool (E)"
+                >
+                  <Eraser class="w-5 h-5"/>
+                </button>
+              </div>
+            </div>
 
-          <!-- Brush Type Selection -->
-          <div class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg p-1 flex-wrap">
-            <button
-              onclick={() => currentBrush = 'pen'}
-              class:bg-indigo-100={currentBrush === 'pen'}
-              class:dark:bg-indigo-900={currentBrush === 'pen'}
-              class:text-indigo-700={currentBrush === 'pen'}
-              class:dark:text-indigo-300={currentBrush === 'pen'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Pen Brush"
-              title="Pen Brush (P)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Pen class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'marker'}
-              class:bg-indigo-100={currentBrush === 'marker'}
-              class:dark:bg-indigo-900={currentBrush === 'marker'}
-              class:text-indigo-700={currentBrush === 'marker'}
-              class:dark:text-indigo-300={currentBrush === 'marker'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Marker Brush"
-              title="Marker Brush (M)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Highlighter class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'crayon'}
-              class:bg-indigo-100={currentBrush === 'crayon'}
-              class:dark:bg-indigo-900={currentBrush === 'crayon'}
-              class:text-indigo-700={currentBrush === 'crayon'}
-              class:dark:text-indigo-300={currentBrush === 'crayon'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Crayon Brush"
-              title="Crayon Brush (C)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Feather class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'spray'}
-              class:bg-indigo-100={currentBrush === 'spray'}
-              class:dark:bg-indigo-900={currentBrush === 'spray'}
-              class:text-indigo-700={currentBrush === 'spray'}
-              class:dark:text-indigo-300={currentBrush === 'spray'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Spray Brush"
-              title="Spray Brush (S)"
-              disabled={currentTool === 'eraser'}
-            >
-              <SprayCan class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'airbrush'}
-              class:bg-indigo-100={currentBrush === 'airbrush'}
-              class:dark:bg-indigo-900={currentBrush === 'airbrush'}
-              class:text-indigo-700={currentBrush === 'airbrush'}
-              class:dark:text-indigo-300={currentBrush === 'airbrush'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Airbrush Brush"
-              title="Airbrush Brush (A)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Wind class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'charcoal'}
-              class:bg-indigo-100={currentBrush === 'charcoal'}
-              class:dark:bg-indigo-900={currentBrush === 'charcoal'}
-              class:text-indigo-700={currentBrush === 'charcoal'}
-              class:dark:text-indigo-300={currentBrush === 'charcoal'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Charcoal Brush"
-              title="Charcoal Brush (H)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Edit3 class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'pencil'}
-              class:bg-indigo-100={currentBrush === 'pencil'}
-              class:dark:bg-indigo-900={currentBrush === 'pencil'}
-              class:text-indigo-700={currentBrush === 'pencil'}
-              class:dark:text-indigo-300={currentBrush === 'pencil'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Pencil Brush"
-              title="Pencil Brush (L)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Pencil class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'watercolor'}
-              class:bg-indigo-100={currentBrush === 'watercolor'}
-              class:dark:bg-indigo-900={currentBrush === 'watercolor'}
-              class:text-indigo-700={currentBrush === 'watercolor'}
-              class:dark:text-indigo-300={currentBrush === 'watercolor'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Watercolor Brush"
-              title="Watercolor Brush (W)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Droplet class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'oil'}
-              class:bg-indigo-100={currentBrush === 'oil'}
-              class:dark:bg-indigo-900={currentBrush === 'oil'}
-              class:text-indigo-700={currentBrush === 'oil'}
-              class:dark:text-indigo-300={currentBrush === 'oil'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Oil Brush"
-              title="Oil Brush (O)"
-              disabled={currentTool === 'eraser'}
-            >
-              <Paintbrush class="w-5 h-5"/>
-            </button>
-            <button
-              onclick={() => currentBrush = 'calligraphy'}
-              class:bg-indigo-100={currentBrush === 'calligraphy'}
-              class:dark:bg-indigo-900={currentBrush === 'calligraphy'}
-              class:text-indigo-700={currentBrush === 'calligraphy'}
-              class:dark:text-indigo-300={currentBrush === 'calligraphy'}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Select Calligraphy Pen"
-              title="Calligraphy Pen (G)"
-              disabled={currentTool === 'eraser'}
-            >
-              <PenTool class="w-5 h-5"/>
-            </button>
-          </div>
+            <!-- Container for Brush Grid and Width Slider (Right Side) -->
+            <div class="flex flex-col items-start w-full flex-1"> 
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Brushes:</span>
+              <!-- Brush Type Selection Grid (with Box) -->
+              <div class="grid grid-cols-5 gap-1 p-1 border border-gray-300 dark:border-gray-600 rounded-lg w-full">
+                <button
+                  onclick={() => currentBrush = 'pen'}
+                  class:bg-indigo-100={currentBrush === 'pen'}
+                  class:dark:bg-indigo-900={currentBrush === 'pen'}
+                  class:text-indigo-700={currentBrush === 'pen'}
+                  class:dark:text-indigo-300={currentBrush === 'pen'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Pen Brush"
+                  title="Pen Brush (P)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Pen class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'marker'}
+                  class:bg-indigo-100={currentBrush === 'marker'}
+                  class:dark:bg-indigo-900={currentBrush === 'marker'}
+                  class:text-indigo-700={currentBrush === 'marker'}
+                  class:dark:text-indigo-300={currentBrush === 'marker'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Marker Brush"
+                  title="Marker Brush (M)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Highlighter class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'crayon'}
+                  class:bg-indigo-100={currentBrush === 'crayon'}
+                  class:dark:bg-indigo-900={currentBrush === 'crayon'}
+                  class:text-indigo-700={currentBrush === 'crayon'}
+                  class:dark:text-indigo-300={currentBrush === 'crayon'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Crayon Brush"
+                  title="Crayon Brush (C)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Feather class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'spray'}
+                  class:bg-indigo-100={currentBrush === 'spray'}
+                  class:dark:bg-indigo-900={currentBrush === 'spray'}
+                  class:text-indigo-700={currentBrush === 'spray'}
+                  class:dark:text-indigo-300={currentBrush === 'spray'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Spray Brush"
+                  title="Spray Brush (S)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <SprayCan class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'airbrush'}
+                  class:bg-indigo-100={currentBrush === 'airbrush'}
+                  class:dark:bg-indigo-900={currentBrush === 'airbrush'}
+                  class:text-indigo-700={currentBrush === 'airbrush'}
+                  class:dark:text-indigo-300={currentBrush === 'airbrush'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Airbrush Brush"
+                  title="Airbrush Brush (A)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Wind class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'charcoal'}
+                  class:bg-indigo-100={currentBrush === 'charcoal'}
+                  class:dark:bg-indigo-900={currentBrush === 'charcoal'}
+                  class:text-indigo-700={currentBrush === 'charcoal'}
+                  class:dark:text-indigo-300={currentBrush === 'charcoal'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Charcoal Brush"
+                  title="Charcoal Brush (H)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Edit3 class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'pencil'}
+                  class:bg-indigo-100={currentBrush === 'pencil'}
+                  class:dark:bg-indigo-900={currentBrush === 'pencil'}
+                  class:text-indigo-700={currentBrush === 'pencil'}
+                  class:dark:text-indigo-300={currentBrush === 'pencil'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Pencil Brush"
+                  title="Pencil Brush (L)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Pencil class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'watercolor'}
+                  class:bg-indigo-100={currentBrush === 'watercolor'}
+                  class:dark:bg-indigo-900={currentBrush === 'watercolor'}
+                  class:text-indigo-700={currentBrush === 'watercolor'}
+                  class:dark:text-indigo-300={currentBrush === 'watercolor'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Watercolor Brush"
+                  title="Watercolor Brush (W)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Droplet class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'oil'}
+                  class:bg-indigo-100={currentBrush === 'oil'}
+                  class:dark:bg-indigo-900={currentBrush === 'oil'}
+                  class:text-indigo-700={currentBrush === 'oil'}
+                  class:dark:text-indigo-300={currentBrush === 'oil'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Oil Brush"
+                  title="Oil Brush (O)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <Paintbrush class="w-5 h-5"/>
+                </button>
+                <button
+                  onclick={() => currentBrush = 'calligraphy'}
+                  class:bg-indigo-100={currentBrush === 'calligraphy'}
+                  class:dark:bg-indigo-900={currentBrush === 'calligraphy'}
+                  class:text-indigo-700={currentBrush === 'calligraphy'}
+                  class:dark:text-indigo-300={currentBrush === 'calligraphy'}
+                  class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Select Calligraphy Pen"
+                  title="Calligraphy Pen (G)"
+                  disabled={currentTool === 'eraser'}
+                >
+                  <PenTool class="w-5 h-5"/>
+                </button>
+              </div>
 
-          <label 
-            class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer group"
-            title="Select Brush Color"
-          >
-            <Palette class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"/>
-            <span class="hidden sm:inline">Color:</span>
-            <input 
-              type="color" 
-              bind:value={strokeColor} 
-              class="w-7 h-7 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden appearance-none bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
-              style="background-color: {strokeColor};" 
-            />
-          </label>
-          
-          <div 
-            class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-[160px]"
-            title="Adjust Brush Width"
-          >
+              <!-- Width Slider -->
+              <div 
+                class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 w-full mt-2"
+                title="Adjust Brush Width"
+              >
             <span class="whitespace-nowrap">Width: <span class="font-semibold">{lineWidth}px</span></span>
             <input 
               type="range" 
@@ -466,6 +489,32 @@
               min="1" max="30" step="1" 
               class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800 accent-indigo-600 dark:accent-indigo-400"
             />
+              </div>
+            </div>
+          </div>
+          
+          <!-- New Color Palette Component -->
+          <ColorPalette bind:value={strokeColor} />
+
+          <!-- NEW: Canvas Size/Aspect Ratio Controls (Label + Grid Layout) -->
+          <div class="flex flex-col items-start gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aspect Ratio:</span>
+            <div class="grid grid-cols-3 gap-1">
+              {#each aspectRatios as ratio (ratio.value)}
+                <button
+                  onclick={() => changeAspectRatio(ratio)}
+                  class="p-2 rounded-md text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  class:bg-indigo-100={currentAspectRatio.value === ratio.value}
+                  class:dark:bg-indigo-900={currentAspectRatio.value === ratio.value}
+                  class:text-indigo-700={currentAspectRatio.value === ratio.value}
+                  class:dark:text-indigo-300={currentAspectRatio.value === ratio.value}
+                  aria-label={ratio.title}
+                  title={ratio.title}
+                >
+                  {ratio.label}
+                </button>
+              {/each}
+            </div>
           </div>
 
           <!-- Undo/Redo Buttons -->
@@ -528,8 +577,8 @@
           </button>
        </div>
 
-        <!-- Canvas container -->
-        <div class="relative w-full aspect-[16/9] mx-auto bg-white dark:bg-gray-300 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300">
+        <!-- Canvas Area - Apply dynamic aspect ratio -->
+        <div class="relative w-full {currentAspectRatio.class} mx-auto bg-white dark:bg-gray-300 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300">
             <!-- Ensure Canvas component fills the container -->
             <Canvas 
                 bind:this={canvasComponent} 
@@ -537,8 +586,6 @@
                 {lineWidth} 
                 {currentTool}
                 {currentBrush}
-                width={1200} 
-                height={675} 
             /> 
             <div class="absolute bottom-2 right-2 text-xs text-gray-500 dark:text-gray-600 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">Draw here!</div>
         </div>

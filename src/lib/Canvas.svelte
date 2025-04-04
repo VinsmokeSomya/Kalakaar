@@ -1,23 +1,20 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount, createEventDispatcher, onDestroy } from 'svelte';
   import type { HTMLCanvasAttributes } from 'svelte/elements';
 
   let { 
     strokeColor = '#000000',
     lineWidth = 5,
-    width = 800, 
-    height = 450,
-    currentTool = 'pen', // Accept currentTool prop, default to 'pen'
-    currentBrush // Define brush prop type
+    currentTool = 'pen',
+    currentBrush
   } = $props<{ 
     strokeColor?: string;
     lineWidth?: number;
-    width?: number;
-    height?: number;
-    currentTool?: 'pen' | 'eraser'; // Define the prop type
-    currentBrush?: 'pen' | 'marker' | 'crayon' | 'spray' | 'airbrush' | 'charcoal' | 'pencil' | 'watercolor' | 'oil' | 'calligraphy'; // Updated prop type
+    currentTool?: 'pen' | 'eraser';
+    currentBrush?: 'pen' | 'marker' | 'crayon' | 'spray' | 'airbrush' | 'charcoal' | 'pencil' | 'watercolor' | 'oil' | 'calligraphy';
   }>();
 
+  let containerElement: HTMLDivElement | null = null;
   let canvasElement: HTMLCanvasElement | null = null;
   let context: CanvasRenderingContext2D | null = null;
   let isDrawing = $state(false);
@@ -26,53 +23,86 @@
   let isMouseOverCanvas = $state(false);
   let cursorX = $state(0);
   let cursorY = $state(0);
-  let sprayAnimationId: number | null = null; // ID for spray animation frame
+  let sprayAnimationId: number | null = null;
   
-  // History for undo/redo functionality
   let history: string[] = [];
   let historyIndex = -1;
-  const MAX_HISTORY = 20; // Limit history to prevent memory issues
+  const MAX_HISTORY = 20;
+
+  let resizeObserver: ResizeObserver | null = null;
 
   const dispatch = createEventDispatcher();
 
-  onMount(() => {
-    if (canvasElement) {
-      context = canvasElement.getContext('2d');
-      if (context) {
-        context.lineJoin = 'round';
-        context.lineCap = 'round';
-        context.lineWidth = lineWidth;
-        context.strokeStyle = strokeColor;
-        // Set initial background
-        context.fillStyle = 'white';
-        context.fillRect(0, 0, width, height);
-        
-        // Save initial state to history
-        saveToHistory();
-      } else {
-        console.error("Failed to get 2D context");
-      }
-      // Add listeners after context is potentially acquired
-      canvasElement.addEventListener('mousedown', startDrawing);
-      canvasElement.addEventListener('mousemove', draw);
-      canvasElement.addEventListener('mouseup', stopDrawing);
-      canvasElement.addEventListener('mouseout', stopDrawing);
-      canvasElement.addEventListener('touchstart', handleTouchStart);
-      canvasElement.addEventListener('touchmove', handleTouchMove);
-      canvasElement.addEventListener('touchend', stopDrawing);
-      canvasElement.addEventListener('touchcancel', stopDrawing);
-
-    } else {
-       console.error("Canvas element not found on mount");
+  function handleResize(entries: ResizeObserverEntry[]) {
+    if (!entries || entries.length === 0 || !canvasElement || !context) {
+      return;
     }
+    const entry = entries[0];
+    const { width, height } = entry.contentRect;
+
+    canvasElement.width = width;
+    canvasElement.height = height;
+
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    context.lineWidth = lineWidth;
+    context.strokeStyle = strokeColor;
+
+    restoreFromHistory(true);
+  }
+
+  onMount(() => {
+    if (!canvasElement || !containerElement) {
+       console.error("Canvas or Container element not found on mount");
+       return;
+    }
+    
+    context = canvasElement.getContext('2d');
+    if (!context) {
+        console.error("Failed to get 2D context");
+        return;
+    }
+    
+    const initialWidth = containerElement?.clientWidth ?? 800;
+    const initialHeight = containerElement?.clientHeight ?? 450;
+    canvasElement.width = initialWidth;
+    canvasElement.height = initialHeight;
+    
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    context.lineWidth = lineWidth;
+    context.strokeStyle = strokeColor;
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, initialWidth, initialHeight);
+    saveToHistory();
+
+    resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(containerElement);
+
+    canvasElement.addEventListener('mousedown', startDrawing);
+    canvasElement.addEventListener('mousemove', draw);
+    canvasElement.addEventListener('mousemove', handleMouseMove);
+    canvasElement.addEventListener('mouseup', stopDrawing);
+    canvasElement.addEventListener('mouseout', stopDrawing);
+    canvasElement.addEventListener('mouseleave', handleMouseLeave);
+    canvasElement.addEventListener('mouseenter', handleMouseEnter);
+    canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvasElement.addEventListener('touchend', stopDrawing);
+    canvasElement.addEventListener('touchcancel', stopDrawing);
 
     return () => {
-      // Cleanup listeners
+      if (resizeObserver && containerElement) {
+        resizeObserver.unobserve(containerElement);
+      }
       if (canvasElement) {
         canvasElement.removeEventListener('mousedown', startDrawing);
         canvasElement.removeEventListener('mousemove', draw);
+        canvasElement.removeEventListener('mousemove', handleMouseMove);
         canvasElement.removeEventListener('mouseup', stopDrawing);
         canvasElement.removeEventListener('mouseout', stopDrawing);
+        canvasElement.removeEventListener('mouseleave', handleMouseLeave);
+        canvasElement.removeEventListener('mouseenter', handleMouseEnter);
         canvasElement.removeEventListener('touchstart', handleTouchStart);
         canvasElement.removeEventListener('touchmove', handleTouchMove);
         canvasElement.removeEventListener('touchend', stopDrawing);
@@ -81,20 +111,16 @@
     };
   });
 
-  // Save current canvas state to history
   function saveToHistory() {
     if (!canvasElement) return;
     
-    // When drawing something new after undoing, remove all future states
     if (historyIndex < history.length - 1) {
       history = history.slice(0, historyIndex + 1);
     }
     
-    // Add current state to history
     const dataUrl = canvasElement.toDataURL('image/png');
     history.push(dataUrl);
     
-    // Limit history size
     if (history.length > MAX_HISTORY) {
       history = history.slice(history.length - MAX_HISTORY);
     }
@@ -102,31 +128,47 @@
     historyIndex = history.length - 1;
   }
 
-  // Undo function
   export function undo() {
-    if (historyIndex <= 0) return; // Can't undo beyond initial state
+    if (historyIndex <= 0) return;
     
     historyIndex--;
     restoreFromHistory();
   }
 
-  // Redo function
   export function redo() {
-    if (historyIndex >= history.length - 1) return; // Can't redo beyond last state
+    if (historyIndex >= history.length - 1) return;
     
     historyIndex++;
     restoreFromHistory();
   }
 
-  // Restore canvas from history at current index
-  function restoreFromHistory() {
-    if (!canvasElement || !context || history.length === 0) return;
+  function restoreFromHistory(isResizeRedraw = false) {
+    if (!canvasElement || !context || historyIndex < 0 || historyIndex >= history.length) {
+      if (canvasElement && context && isResizeRedraw) {
+        context.fillStyle = 'white'; 
+        context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      }
+      return;
+    }
     
     const img = new Image();
     img.onload = () => {
-      context?.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
-      context?.drawImage(img, 0, 0);
+      if (!context || !canvasElement) return;
+      context.fillStyle = 'white'; 
+      context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+      context.drawImage(img, 0, 0, canvasElement.width, canvasElement.height);
+      context.lineWidth = lineWidth;
+      context.strokeStyle = strokeColor;
+      context.lineJoin = 'round';
+      context.lineCap = 'round';
     };
+    img.onerror = () => {
+        console.error("Failed to load image from history.");
+        if (canvasElement && context && isResizeRedraw) {
+            context.fillStyle = 'white'; 
+            context.fillRect(0, 0, canvasElement.width, canvasElement.height);
+        }
+    }
     img.src = history[historyIndex];
   }
 
@@ -141,13 +183,13 @@
             clientX = event.touches[0].clientX;
             clientY = event.touches[0].clientY;
           } else { 
-            return {x: lastX, y: lastY}; // Use last coords on touchend/cancel without touches
+            return {x: lastX, y: lastY};
           }
       } else if (event instanceof MouseEvent) {
           clientX = event.clientX;
           clientY = event.clientY;
       } else {
-          return { x: 0, y: 0 }; // Should not happen
+          return { x: 0, y: 0 };
       }
       return { x: clientX - rect.left, y: clientY - rect.top };
   }
@@ -158,13 +200,11 @@
     isDrawing = true;
     [lastX, lastY] = [x, y];
 
-    // Start continuous spray/airbrush if selected
     if (currentTool === 'pen' && (currentBrush === 'spray' || currentBrush === 'airbrush')) {
-      if (sprayAnimationId === null) { // Prevent multiple loops
+      if (sprayAnimationId === null) {
         sprayAnimationId = requestAnimationFrame(sprayLoop);
       }
     } else {
-      // Standard start for other tools/brushes
       context.strokeStyle = strokeColor;
       context.lineWidth = lineWidth;
       context.beginPath();
@@ -172,33 +212,26 @@
     }
   }
 
-  // --- SPRAY PAINT LOGIC --- 
   function doSprayEffect(x: number, y: number, isAirbrush: boolean) {
     if (!context) return;
-    const baseRadius = lineWidth * (isAirbrush ? 0.8 : 1.5); // Airbrush is more focused
+    const baseRadius = lineWidth * (isAirbrush ? 0.8 : 1.5);
     const sprayDensity = Math.max(5, Math.min(50, lineWidth * (isAirbrush ? 1.5 : 2))); 
-    context.globalAlpha = isAirbrush ? 0.08 : 0.2; // Airbrush is lighter
+    context.globalAlpha = isAirbrush ? 0.08 : 0.2;
     context.fillStyle = strokeColor;
     context.globalCompositeOperation = 'source-over'; 
 
     for (let i = 0; i < sprayDensity; i++) {
       const angle = Math.random() * Math.PI * 2;
-      // Gaussian distribution for softer edges (more dots near center)
       const radius = Math.sqrt(-2 * Math.log(Math.random())) * (baseRadius / 3);
       const offsetX = Math.cos(angle) * radius;
       const offsetY = Math.sin(angle) * radius;
       
-      // Optional: Check distance if strict circle needed, but Gaussian might be enough
-      // const distSq = offsetX * offsetX + offsetY * offsetY;
-      // if (distSq < baseRadius * baseRadius) { 
       context.beginPath();
       context.arc(x + offsetX, y + offsetY, Math.random() * (isAirbrush ? 1.2 : 1.5), 0, Math.PI * 2); 
       context.fill();
-      // }
     }
   }
 
-  // Animation loop for continuous spray/airbrush
   function sprayLoop() {
     const isSpraying = isDrawing && currentTool === 'pen' && (currentBrush === 'spray' || currentBrush === 'airbrush');
     if (!isSpraying) {
@@ -208,13 +241,11 @@
       }
       return; 
     }
-    doSprayEffect(lastX, lastY, currentBrush === 'airbrush'); // Pass airbrush flag
+    doSprayEffect(lastX, lastY, currentBrush === 'airbrush');
     sprayAnimationId = requestAnimationFrame(sprayLoop);
   }
-  // --- END SPRAY PAINT LOGIC ---
 
   function draw(event: MouseEvent | TouchEvent) {
-    // Update last coordinates needed for spray loop and lines
     const { x: currentX, y: currentY } = getCoordinates(event);
     if (!isDrawing || !context) return;
 
@@ -222,13 +253,11 @@
       event.preventDefault(); 
     }
 
-    // If spraying/airbrushing, the loop handles drawing, just update position
     if (currentTool === 'pen' && (currentBrush === 'spray' || currentBrush === 'airbrush')) {
-        [lastX, lastY] = [currentX, currentY]; // Update position for loop
+        [lastX, lastY] = [currentX, currentY];
         return; 
     }
     
-    // --- STANDARD LINE/ERASER LOGIC --- 
     let drawX = currentX;
     let drawY = currentY;
 
@@ -236,11 +265,10 @@
 
     if (currentTool === 'pen') { 
       context.strokeStyle = strokeColor;
-      // Reset defaults before applying brush-specific styles
       context.globalAlpha = 1.0;
       context.lineCap = 'round';
       context.lineWidth = lineWidth;
-      let pressure = 1.0; // Placeholder for potential future pressure sensitivity
+      let pressure = 1.0;
 
       if (currentBrush === 'marker') {
         context.globalAlpha = 0.3;
@@ -251,25 +279,23 @@
         drawX += (Math.random() - 0.5) * jitter;
         drawY += (Math.random() - 0.5) * jitter;
       } else if (currentBrush === 'charcoal') {
-        context.globalAlpha = 0.85; // Darker alpha
-        context.lineCap = 'butt'; // Flat ends can look charcoal-like
-        // Simulate varying line width slightly for texture
+        context.globalAlpha = 0.85;
+        context.lineCap = 'butt';
         context.lineWidth = Math.max(1, lineWidth + (Math.random() - 0.5) * (lineWidth * 0.4)); 
       } else if (currentBrush === 'pencil') {
-        context.globalAlpha = 0.6; // Lighter than crayon
-        context.lineWidth = Math.max(0.5, lineWidth / 3); // Thinner line
+        context.globalAlpha = 0.6;
+        context.lineWidth = Math.max(0.5, lineWidth / 3);
         const pencilJitter = context.lineWidth * 0.2;
         drawX += (Math.random() - 0.5) * pencilJitter;
         drawY += (Math.random() - 0.5) * pencilJitter;
       } else if (currentBrush === 'watercolor') {
-        context.globalAlpha = 0.1; // Lower alpha further
+        context.globalAlpha = 0.1;
         context.lineCap = 'round'; 
-        // Simulate bleed with more variation
         const numStrokes = 4; 
         for (let i = 0; i < numStrokes; i++) { 
-            context.lineWidth = lineWidth * (1 + Math.random() * 0.6 - 0.3); // More width variation
-            const offsetX = (Math.random() - 0.5) * lineWidth * 0.5; // Larger offset
-            const offsetY = (Math.random() - 0.5) * lineWidth * 0.5; // Larger offset
+            context.lineWidth = lineWidth * (1 + Math.random() * 0.6 - 0.3);
+            const offsetX = (Math.random() - 0.5) * lineWidth * 0.5;
+            const offsetY = (Math.random() - 0.5) * lineWidth * 0.5;
             context.beginPath();
             context.moveTo(lastX + offsetX, lastY + offsetY);
             context.lineTo(drawX + offsetX, drawY + offsetY);
@@ -280,11 +306,10 @@
         [lastX, lastY] = [currentX, currentY]; 
         return; 
       } else if (currentBrush === 'oil') {
-        context.globalAlpha = 0.95; // Keep high opacity
+        context.globalAlpha = 0.95;
         context.lineCap = 'butt';
         context.lineWidth = lineWidth; 
 
-        // Draw main stroke
         context.beginPath();
         context.moveTo(lastX, lastY);
         context.lineTo(drawX, drawY);
@@ -493,26 +518,14 @@
   }
 </style>
 
-<!-- Container to position canvas and custom cursor -->
-<div class="relative" style={`width: ${width}px; height: ${height}px;`}>
-  <!-- Canvas Element -->
+<!-- Container div - Binds containerElement, remove fixed size style -->
+<div bind:this={containerElement} class="relative w-full h-full">
+  <!-- Canvas Element - Remove width/height attributes -->
   <canvas 
     bind:this={canvasElement}
-    {width} 
-    {height}
-    class="absolute inset-0 touch-none {getCursorClass(currentTool, currentBrush, isMouseOverCanvas)}"
-    style="touch-action: none;"
+    class="touch-none {getCursorClass(currentTool, currentBrush, isMouseOverCanvas)}"
+    style="touch-action: none; display: block;" 
     tabindex="0"
-    onmousedown={startDrawing}
-    onmousemove={handleMouseMove}
-    onmouseup={stopDrawing} 
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
-    onblur={stopDrawing} 
-    ontouchstart={handleTouchStart} 
-    ontouchmove={handleTouchMove} 
-    ontouchend={stopDrawing} 
-    ontouchcancel={stopDrawing}
   ></canvas> 
 
   <!-- Custom Eraser Cursor -->
