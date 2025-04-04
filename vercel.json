@@ -1,7 +1,5 @@
 {
   "framework": "sveltekit",
-  "buildCommand": "cd kalakaar && npm run build",
-  "installCommand": "npm install && cd kalakaar && npm install",
   "env": {
     "GEMINI_API_KEY": "${GEMINI_API_KEY}"
   }
