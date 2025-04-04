@@ -14,7 +14,7 @@ These fundamental improvements will enhance the basic drawing experience.
 - [x] **Eraser tool** - Allow users to erase parts of their drawing
 - [x] **Keyboard shortcuts** - Add shortcuts for common actions (Z-undo, R-redo, E-eraser, P-pen)
 - [x] **Tooltips** - Add descriptive tooltips to all UI elements
-- [ ] **Drawing progress indicators** - Visual feedback during AI image generation
+- [x] **Drawing progress indicators** - Visual feedback during AI image generation
 
 ## Milestone 2: Enhanced Drawing Tools
 *Estimated timeframe: 4-6 weeks*
