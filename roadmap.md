@@ -11,9 +11,9 @@ These fundamental improvements will enhance the basic drawing experience.
 - [x] Add undo/redo functionality
 - [x] Add download button for drawings
 - [x] Implement pen cursor for drawing
-- [ ] **Eraser tool** - Allow users to erase parts of their drawing
-- [ ] **Keyboard shortcuts** - Add shortcuts for common actions (Z-undo, R-redo, E-eraser, P-pen)
-- [ ] **Tooltips** - Add descriptive tooltips to all UI elements
+- [x] **Eraser tool** - Allow users to erase parts of their drawing
+- [x] **Keyboard shortcuts** - Add shortcuts for common actions (Z-undo, R-redo, E-eraser, P-pen)
+- [x] **Tooltips** - Add descriptive tooltips to all UI elements
 - [ ] **Drawing progress indicators** - Visual feedback during AI image generation
 
 ## Milestone 2: Enhanced Drawing Tools
