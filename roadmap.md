@@ -21,7 +21,7 @@ These fundamental improvements will enhance the basic drawing experience.
 
 Expanding the artistic capabilities with more drawing options.
 
-- [ ] **Brush types** - Add different brushes (marker, crayon, spray, etc.)
+- [x] **Brush types** - Add different brushes (marker, crayon, spray, etc.)
 - [ ] **Color palette** - Expanded color selection with saved favorite colors
 - [ ] **Canvas size options** - Allow users to select from different canvas dimensions
 - [ ] **Brush size slider improvements** - Add numerical indicator and preset sizes

@@ -210,13 +210,12 @@
 <!-- Main container -->
 <div class="min-h-screen w-full dark:bg-gray-900 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-0 flex flex-col items-center font-sans antialiased transition-colors duration-300 relative">
   
-  <!-- Sidebar Group Container -->
-  <div class="group fixed top-0 left-0 h-full z-40"> <!-- Group container -->
-    <!-- Hover Trigger Area -->
-    <div class="absolute top-0 left-0 h-full w-5 cursor-pointer"></div> <!-- Invisible trigger -->
+  <!-- Sidebar Group Container - NOW acts as the narrow trigger -->
+  <div class="group fixed top-0 left-0 h-full z-40 w-2 cursor-pointer"> <!-- Added w-2, removed inner trigger -->
+    <!-- Removed Hover Trigger Area -->
 
-    <!-- Sidebar Content -->
-    <aside class="h-full w-64 bg-white dark:bg-slate-900 shadow-lg p-4 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+    <!-- Sidebar Content (moves with group hover) -->
+    <aside class="absolute top-0 left-0 h-full w-64 bg-white dark:bg-slate-900 shadow-lg p-4 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto border-r border-gray-200 dark:border-gray-700">
       <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Keyboard Shortcuts</h3>
       <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
         <li><kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Ctrl/Cmd</kbd> + <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Z</kbd>: Undo</li>
