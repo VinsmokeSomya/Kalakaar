@@ -174,7 +174,9 @@
   <button 
     onclick={toggleTheme}
     class="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all z-10"
-    aria-label="Toggle theme">
+    aria-label="Toggle theme"
+    title="Toggle Dark/Light Mode"
+  >
     {#if $theme === 'light'}
       <Moon class="w-5 h-5" />
     {:else}
@@ -218,7 +220,7 @@
               class:dark:text-indigo-300={currentTool === 'pen'}
               class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Select Pen Tool"  
-              title="Pen Tool"
+              title="Pen Tool (P)"
             >
               <Pen class="w-5 h-5"/>
             </button>
@@ -230,13 +232,16 @@
               class:dark:text-indigo-300={currentTool === 'eraser'}
               class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Select Eraser Tool"
-              title="Eraser Tool"
+              title="Eraser Tool (E)"
             >
               <Eraser class="w-5 h-5"/>
             </button>
           </div>
 
-          <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer group">
+          <label 
+            class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer group"
+            title="Select Brush Color"
+          >
             <Palette class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"/>
             <span class="hidden sm:inline">Color:</span>
             <input 
@@ -247,7 +252,10 @@
             />
           </label>
           
-          <div class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-[160px]">
+          <div 
+            class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 flex-1 min-w-[160px]"
+            title="Adjust Brush Width"
+          >
             <span class="whitespace-nowrap">Width: <span class="font-semibold">{lineWidth}px</span></span>
             <input 
               type="range" 
@@ -263,6 +271,7 @@
               onclick={() => canvasComponent?.undo()}
               class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
               aria-label="Undo"
+              title="Undo (Ctrl+Z)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 7v6h6"></path>
@@ -273,6 +282,7 @@
               onclick={() => canvasComponent?.redo()}
               class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
               aria-label="Redo"
+              title="Redo (Ctrl+Y)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 7v6h-6"></path>
@@ -282,9 +292,11 @@
           </div>
 
           <button
-            onclick={() => canvasComponent?.clearCanvas()} 
+            onclick={() => canvasComponent?.clearCanvas()}
             class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400 active:bg-red-200 dark:active:bg-red-800/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
-            aria-label="Clear Canvas">
+            aria-label="Clear Canvas"
+            title="Clear Canvas"
+          >
               <Trash2 class="w-5 h-5"/>
           </button>
 
@@ -303,6 +315,7 @@
             }}
             class="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
             aria-label="Download Drawing"
+            title="Download Drawing"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -346,7 +359,9 @@
       <button
         onclick={handleGenerate}
         disabled={isLoading || !prompt}
-        class="w-full flex justify-center items-center gap-2.5 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+        class="w-full flex justify-center items-center gap-2.5 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+        title="Generate image based on drawing and prompt"
+      >
           {#if isLoading}
              <LoaderCircle class="w-5 h-5 animate-spin" /> Generating...
           {:else}
@@ -394,6 +409,7 @@
                      }
                    }}
                    class="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-lg flex items-center gap-2 transition-colors"
+                   title="View generated image fullscreen"
                  >
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                      <polyline points="15 3 21 3 21 9"></polyline>
@@ -416,14 +432,18 @@
       <!-- Clear All Button -->
       <button
         onclick={clearAll}
-        class="w-full px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 active:bg-gray-300 dark:active:bg-gray-500 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+        class="w-full px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 active:bg-gray-300 dark:active:bg-gray-500 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+        title="Clear canvas, prompt, and results"
+      >
           Clear All
       </button>
 
       <!-- Give Feedback Button -->
       <button
         onclick={() => showFeedbackModal = true}
-        class="mt-4 w-full flex justify-center items-center gap-2.5 px-5 py-2.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium rounded-lg border border-blue-200 dark:border-blue-700/50 shadow-sm hover:bg-blue-200 dark:hover:bg-blue-800/60 active:bg-blue-300 dark:active:bg-blue-700/70 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+        class="mt-4 w-full flex justify-center items-center gap-2.5 px-5 py-2.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium rounded-lg border border-blue-200 dark:border-blue-700/50 shadow-sm hover:bg-blue-200 dark:hover:bg-blue-800/60 active:bg-blue-300 dark:active:bg-blue-700/70 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+        title="Open feedback form"
+      >
           <MessageSquare class="w-5 h-5"/> Give Feedback
       </button>
     </div>
