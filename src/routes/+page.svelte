@@ -3,7 +3,7 @@
   import type CanvasComponentType from '$lib/Canvas.svelte'; 
   import Canvas from '$lib/Canvas.svelte';
   import FeedbackForm from '$lib/FeedbackForm.svelte';
-  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush } from 'lucide-svelte';
+  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen } from 'lucide-svelte';
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
@@ -12,8 +12,8 @@
   const theme = writable<'light' | 'dark'>('light'); // Default to light
 
   // State for fullscreen image modal
-  let isFullscreenView = false;
-  let showFeedbackModal = false; // State for feedback modal visibility
+  let isFullscreenView = $state(false); // Use $state
+  let showFeedbackModal = $state(false); // Use $state
 
   function toggleTheme() {
     theme.update(current => {
@@ -63,13 +63,14 @@
 
   // Type the component instance
   let canvasComponent: CanvasComponentType;
-  let strokeColor = '#000000';
-  let lineWidth = 5;
-  let prompt = '';
-  let generatedText = '';
-  let generatedImageDataUrl: string | null = null;
-  let isLoading = false;
-  let errorMsg = '';
+  let strokeColor = $state('#000000');
+  let lineWidth = $state(5);
+  let currentTool: 'pen' | 'eraser' = $state('pen');
+  let prompt = $state('');
+  let generatedText = $state('');
+  let generatedImageDataUrl: string | null = $state(null); // Use $state
+  let isLoading = $state(false);     // Use $state
+  let errorMsg = $state('');       // Use $state
 
   async function handleGenerate() {
     if (!prompt || isLoading || !canvasComponent) return;
@@ -128,7 +129,7 @@
 
   <!-- Absolutely Positioned Theme Toggle -->
   <button 
-    on:click={toggleTheme} 
+    onclick={toggleTheme}
     class="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all z-10"
     aria-label="Toggle theme">
     {#if $theme === 'light'}
@@ -163,6 +164,35 @@
        
        <!-- Controls Styling -->
        <div class="w-full mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-wrap justify-center items-center gap-x-5 gap-y-3">
+          
+          <!-- Tool Selection Buttons -->
+          <div class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg p-1">
+            <button
+              onclick={() => currentTool = 'pen'}
+              class:bg-indigo-100={currentTool === 'pen'}
+              class:dark:bg-indigo-900={currentTool === 'pen'}
+              class:text-indigo-700={currentTool === 'pen'}
+              class:dark:text-indigo-300={currentTool === 'pen'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Pen Tool"  
+              title="Pen Tool"
+            >
+              <Pen class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentTool = 'eraser'}
+              class:bg-indigo-100={currentTool === 'eraser'}
+              class:dark:bg-indigo-900={currentTool === 'eraser'}
+              class:text-indigo-700={currentTool === 'eraser'}
+              class:dark:text-indigo-300={currentTool === 'eraser'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Eraser Tool"
+              title="Eraser Tool"
+            >
+              <Eraser class="w-5 h-5"/>
+            </button>
+          </div>
+
           <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer group">
             <Palette class="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"/>
             <span class="hidden sm:inline">Color:</span>
@@ -187,7 +217,7 @@
           <!-- Undo/Redo Buttons -->
           <div class="flex gap-2">
             <button
-              on:click={() => canvasComponent?.undo()}
+              onclick={() => canvasComponent?.undo()}
               class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
               aria-label="Undo"
             >
@@ -197,7 +227,7 @@
               </svg>
             </button>
             <button
-              on:click={() => canvasComponent?.redo()}
+              onclick={() => canvasComponent?.redo()}
               class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
               aria-label="Redo"
             >
@@ -209,7 +239,7 @@
           </div>
 
           <button
-            on:click={() => canvasComponent?.clearCanvas()} 
+            onclick={() => canvasComponent?.clearCanvas()} 
             class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400 active:bg-red-200 dark:active:bg-red-800/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
             aria-label="Clear Canvas">
               <Trash2 class="w-5 h-5"/>
@@ -217,7 +247,7 @@
 
           <!-- Download Drawing Button -->
           <button
-            on:click={() => {
+            onclick={() => {
               if (canvasComponent) {
                 const dataUrl = canvasComponent.getImageDataURL();
                 if (dataUrl) {
@@ -246,6 +276,7 @@
                 bind:this={canvasComponent} 
                 {strokeColor} 
                 {lineWidth} 
+                {currentTool}
                 width={1200} 
                 height={675} 
             /> 
@@ -270,7 +301,7 @@
 
       <!-- Generate Button -->
       <button
-        on:click={handleGenerate}
+        onclick={handleGenerate}
         disabled={isLoading || !prompt}
         class="w-full flex justify-center items-center gap-2.5 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
           {#if isLoading}
@@ -314,7 +345,7 @@
                    Download Image
                  </a>
                  <button 
-                   on:click={() => {
+                   onclick={() => {
                      if (generatedImageDataUrl) {
                        isFullscreenView = true;
                      }
@@ -341,14 +372,14 @@
 
       <!-- Clear All Button -->
       <button
-        on:click={clearAll}
+        onclick={clearAll}
         class="w-full px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 active:bg-gray-300 dark:active:bg-gray-500 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
           Clear All
       </button>
 
       <!-- Give Feedback Button -->
       <button
-        on:click={() => showFeedbackModal = true}
+        onclick={() => showFeedbackModal = true}
         class="mt-4 w-full flex justify-center items-center gap-2.5 px-5 py-2.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium rounded-lg border border-blue-200 dark:border-blue-700/50 shadow-sm hover:bg-blue-200 dark:hover:bg-blue-800/60 active:bg-blue-300 dark:active:bg-blue-700/70 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
           <MessageSquare class="w-5 h-5"/> Give Feedback
       </button>
@@ -360,8 +391,8 @@
   {#if showFeedbackModal}
     <div 
       class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-      on:click={() => showFeedbackModal = false} 
-      on:keydown={(e) => e.key === 'Escape' && (showFeedbackModal = false)}
+      onclick={() => showFeedbackModal = false}
+      onkeydown={(e) => { if (e.key === 'Escape') showFeedbackModal = false; }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="feedback-modal-title"
@@ -369,14 +400,14 @@
     >
       <div 
         class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto" 
-        on:click|stopPropagation
-        on:keydown|stopPropagation
+        onclick={(event) => { event.stopPropagation(); }}
+        onkeydown={(event) => { event.stopPropagation(); }}
         role="document"
         tabindex="0"
       >
         <!-- Close Button -->
         <button 
-          on:click={() => showFeedbackModal = false} 
+          onclick={() => showFeedbackModal = false} 
           class="absolute top-3 right-3 p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           aria-label="Close feedback form"
         >
@@ -395,8 +426,8 @@
 {#if isFullscreenView && generatedImageDataUrl}
   <div 
     class="fixed inset-0 bg-transparent backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-    on:click={() => isFullscreenView = false}
-    on:keydown={(e) => e.key === 'Escape' && (isFullscreenView = false)}
+    onclick={() => isFullscreenView = false}
+    onkeydown={(e) => { if (e.key === 'Escape') isFullscreenView = false; }}
     role="dialog"
     aria-modal="true"
     aria-label="Fullscreen image view"
@@ -404,7 +435,7 @@
   >
     <div class="absolute top-4 right-4">
       <button 
-        on:click={() => isFullscreenView = false} 
+        onclick={() => isFullscreenView = false} 
         class="p-2 rounded-full bg-gray-800/30 text-white hover:bg-gray-800/50 transition-colors"
         aria-label="Close fullscreen view"
       >
@@ -414,8 +445,8 @@
     
     <div 
       class="max-w-full max-h-full" 
-      on:click|stopPropagation
-      on:keydown|stopPropagation
+      onclick={(event) => { event.stopPropagation(); }}
+      onkeydown={(event) => { event.stopPropagation(); }}
       tabindex="-1"
       role="presentation"
     >

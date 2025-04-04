@@ -2,16 +2,28 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import type { HTMLCanvasAttributes } from 'svelte/elements';
 
-  export let width = 600;
-  export let height = 450;
-  export let strokeColor = '#000000';
-  export let lineWidth = 5;
+  let { 
+    strokeColor = '#000000',
+    lineWidth = 5,
+    width = 800, 
+    height = 450,
+    currentTool = 'pen' // Accept currentTool prop, default to 'pen'
+  } = $props<{ 
+    strokeColor?: string;
+    lineWidth?: number;
+    width?: number;
+    height?: number;
+    currentTool?: 'pen' | 'eraser'; // Define the prop type
+  }>();
 
   let canvasElement: HTMLCanvasElement | null = null;
   let context: CanvasRenderingContext2D | null = null;
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
+  let isDrawing = $state(false);
+  let lastX = $state(0);
+  let lastY = $state(0);
+  let isMouseOverCanvas = $state(false);
+  let cursorX = $state(0);
+  let cursorY = $state(0);
   
   // History for undo/redo functionality
   let history: string[] = [];
@@ -162,9 +174,23 @@
     context.strokeStyle = strokeColor;
     context.lineWidth = lineWidth;
 
+    // Set composite operation based on the tool
+    context.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+
+    // Use background color for eraser, or strokeColor for pen
+    // We actually don't need to set strokeStyle for 'destination-out'
+    if (currentTool === 'pen') {
+      context.strokeStyle = strokeColor;
+    }
+    // Line width applies to both pen and eraser size
+    context.lineWidth = lineWidth;
+    context.lineCap = 'round'; // Use round cap for smoother erasing
+    context.lineJoin = 'round'; // Use round join
+
     context.lineTo(x, y);
     context.stroke();
-    [lastX, lastY] = [x, y];
+    context.beginPath(); // Start a new path for the next segment
+    context.moveTo(x, y);
   }
 
   function stopDrawing() {
@@ -206,9 +232,39 @@
     }
   }
 
-  // Reactive updates for styles (can be helpful if user changes color/width mid-stroke)
-  $: if (context) context.strokeStyle = strokeColor;
-  $: if (context) context.lineWidth = lineWidth;
+  // Update cursor position on mouse move
+  function handleMouseMove(event: MouseEvent) {
+    if (!isMouseOverCanvas) return;
+    const rect = canvasElement?.getBoundingClientRect();
+    if (rect) {
+        cursorX = event.clientX - rect.left;
+        cursorY = event.clientY - rect.top;
+    }
+    // Also call the drawing logic if currently drawing
+    if (isDrawing) {
+      draw(event);
+    }
+  }
+
+  // Handle mouse entering the canvas
+  function handleMouseEnter() {
+    isMouseOverCanvas = true;
+  }
+
+  // Handle mouse leaving the canvas
+  function handleMouseLeave() {
+    isMouseOverCanvas = false;
+    // Also stop drawing if mouse leaves while button is down
+    stopDrawing(); 
+  }
+
+  // Use $effect to reactively update context properties
+  $effect(() => {
+    if (context) {
+      context.strokeStyle = strokeColor;
+      context.lineWidth = lineWidth;
+    }
+  });
 
 </script>
 
@@ -216,23 +272,55 @@
   canvas {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='24' height='24'%3E%3Cpath fill='%23000' d='M290.74 93.24l128.02 128.02-277.99 277.99-114.14 12.6C11.35 513.54-1.56 500.62.14 485.34l12.7-114.22 277.9-277.88zm207.2-19.06l-60.11-60.11c-18.75-18.75-49.16-18.75-67.91 0l-56.55 56.55 128.02 128.02 56.55-56.55c18.75-18.76 18.75-49.16 0-67.91z'/%3E%3C/svg%3E") 0 24, auto;
   }
+  /* Hide default cursor when eraser is active and over canvas */
+  .eraser-active-cursor {
+    cursor: none;
+  }
+  /* Custom circular cursor style */
+  .custom-cursor {
+    position: absolute;
+    border: 1px solid black;
+    border-radius: 50%;
+    pointer-events: none; /* Prevent cursor from interfering with canvas events */
+    mix-blend-mode: difference; /* Helps visibility on different colors */
+    background-color: white; /* Use difference blend */
+    opacity: 0.7;
+    z-index: 1000; /* Ensure it's on top */
+  }
 </style>
 
-<!-- Basic canvas structure, styling handled by parent and reactive updates -->
-<canvas
-  bind:this={canvasElement}
-  {width}
-  {height}
-  class="border border-gray-400 touch-none bg-white shadow-md block"
-  style="touch-action: none;"
-  tabindex="0"
-  on:mousedown={startDrawing}
-  on:mousemove={draw}
-  on:mouseup={stopDrawing}
-  on:mouseout={stopDrawing}
-  on:blur={stopDrawing}
-  on:touchstart={handleTouchStart}
-  on:touchmove={handleTouchMove}
-  on:touchend={stopDrawing}
-  on:touchcancel={stopDrawing}
-></canvas> 
+<!-- Container to position canvas and custom cursor -->
+<div class="relative" style={`width: ${width}px; height: ${height}px;`}>
+  <!-- Canvas Element -->
+  <canvas 
+    bind:this={canvasElement}
+    {width} 
+    {height}
+    class="absolute inset-0 touch-none {currentTool === 'pen' ? 'pen-cursor' : (isMouseOverCanvas ? 'eraser-active-cursor' : 'pen-cursor')}" 
+    style="touch-action: none;"
+    tabindex="0"
+    onmousedown={startDrawing}
+    onmousemove={handleMouseMove}
+    onmouseup={stopDrawing} 
+    onmouseenter={handleMouseEnter}
+    onmouseleave={handleMouseLeave}
+    onblur={stopDrawing} 
+    ontouchstart={handleTouchStart} 
+    ontouchmove={handleTouchMove} 
+    ontouchend={stopDrawing} 
+    ontouchcancel={stopDrawing}
+  ></canvas> 
+
+  <!-- Custom Eraser Cursor -->
+  {#if currentTool === 'eraser' && isMouseOverCanvas}
+    <div 
+      class="custom-cursor"
+      style={`
+        left: ${cursorX - lineWidth / 2}px; 
+        top: ${cursorY - lineWidth / 2}px; 
+        width: ${lineWidth}px; 
+        height: ${lineWidth}px;
+      `}
+    ></div>
+  {/if}
+</div> 
