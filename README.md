@@ -21,6 +21,40 @@
 - **Drawing**: Canvas API
 - **AI**: Google Gemini 2.0 API
 
+## Project Structure
+
+```
+kalakaar/
+├── .github/                 # GitHub Actions workflows (e.g., deployment)
+│   └── workflows/
+│       └── deploy.yml
+├── src/
+│   ├── lib/                 # Reusable Svelte components (Canvas, FeedbackForm, etc.)
+│   ├── routes/              # Application pages and API endpoints
+│   │   ├── +layout.svelte   # Main layout component
+│   │   ├── +page.svelte     # Main application page component
+│   │   └── api/
+│   │       └── gemini/      # API endpoint for Gemini interaction
+│   │           └── +server.ts
+│   ├── app.css              # Global CSS styles
+│   └── app.html             # Main HTML template
+├── static/                  # Static assets (favicon, logo, etc.)
+│   ├── favicon.png
+│   └── kalakar-logo.png     # <-- Make sure this file exists here!
+├── .env.local               # Local environment variables (API Key - DO NOT COMMIT)
+├── .gitignore               # Files/directories ignored by Git
+├── .dockerignore            # Files/directories ignored by Docker
+├── Dockerfile               # Instructions for building the Docker image
+├── docker-compose.yml       # Docker Compose configuration for local development
+├── package.json             # Project metadata, dependencies, and scripts
+├── README.md                # This file
+├── roadmap.md               # Project development roadmap
+├── svelte.config.js         # SvelteKit configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── tsconfig.json            # TypeScript configuration
+└── vite.config.ts           # Vite configuration
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -38,8 +72,6 @@
 
 2. Install dependencies:
    ```
-   npm install
-   cd kalakaar
    npm install
    ```
 

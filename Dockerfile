@@ -4,16 +4,15 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-COPY kalakaar/package.json kalakaar/package-lock.json* ./kalakaar/
 
 # Install dependencies
-RUN npm ci && cd kalakaar && npm ci
+RUN npm ci
 
 # Copy application code
 COPY . .
 
 # Build the application
-RUN cd kalakaar && npm run build
+RUN npm run build
 
 # Stage 2: Production
 FROM node:18-alpine AS runner
@@ -27,9 +26,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 svelte
 
 # Copy only necessary files from the builder stage
-COPY --from=builder --chown=svelte:nodejs /app/kalakaar/build ./kalakaar/build
-COPY --from=builder --chown=svelte:nodejs /app/kalakaar/node_modules ./kalakaar/node_modules
-COPY --from=builder --chown=svelte:nodejs /app/kalakaar/package.json ./kalakaar/
+COPY --from=builder --chown=svelte:nodejs /app/build ./build
+COPY --from=builder --chown=svelte:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=svelte:nodejs /app/package.json ./
 
 # Switch to non-root user
 USER svelte
@@ -38,5 +37,4 @@ USER svelte
 EXPOSE 3000
 
 # Set the command to start the app
-WORKDIR /app/kalakaar
 CMD ["node", "build/index.js"] 

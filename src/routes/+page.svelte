@@ -2,7 +2,8 @@
   // Explicitly type Canvas component if possible, otherwise use generic SvelteComponent
   import type CanvasComponentType from '$lib/Canvas.svelte'; 
   import Canvas from '$lib/Canvas.svelte';
-  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X } from 'lucide-svelte';
+  import FeedbackForm from '$lib/FeedbackForm.svelte';
+  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush } from 'lucide-svelte';
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
@@ -12,6 +13,7 @@
 
   // State for fullscreen image modal
   let isFullscreenView = false;
+  let showFeedbackModal = false; // State for feedback modal visibility
 
   function toggleTheme() {
     theme.update(current => {
@@ -119,28 +121,37 @@
 </svelte:head>
 
 <!-- Main container -->
-<div class="min-h-screen w-full dark:bg-gray-900 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-0 flex flex-col items-center font-sans antialiased transition-colors duration-300">
+<div class="min-h-screen w-full dark:bg-gray-900 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-0 flex flex-col items-center font-sans antialiased transition-colors duration-300 relative">
   
+  <!-- Absolutely Positioned Logo -->
+  <img src="/kalakar-logo.png" alt="Kalakaar Logo" class="absolute top-4 left-4 h-18 w-auto rounded-lg z-10" />
+
+  <!-- Absolutely Positioned Theme Toggle -->
+  <button 
+    on:click={toggleTheme} 
+    class="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all z-10"
+    aria-label="Toggle theme">
+    {#if $theme === 'light'}
+      <Moon class="w-5 h-5" />
+    {:else}
+      <Sun class="w-5 h-5" />
+    {/if}
+  </button>
+
   <!-- Header -->
-  <header class="w-full max-w-[1400px] mb-6 md:mb-10 flex justify-between items-center px-4">
-    <div class="flex-1"></div> <!-- Spacer -->
-    <div class="text-center">
+  <header class="w-full max-w-[1400px] mb-6 md:mb-10 flex justify-between items-center px-4 pt-8">
+    <div class="flex items-center w-24"> <!-- Added fixed width spacer for logo area -->
+      <!-- Spacer, was logo area -->
+    </div>
+    <div class="text-center flex-1">
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 mb-1 sm:mb-2 flex items-center justify-center gap-3">
-        <Wand2 class="w-7 h-7 sm:w-8 sm:h-8 text-indigo-600"/> कलाkaar
+        <Paintbrush class="w-7 h-7 sm:w-8 sm:h-8 text-indigo-600"/> कलाkaar
       </h1>
       <p class="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Draw something and bring it to life with AI</p>
+      <p class="text-gray-500 dark:text-gray-500 text-xs sm:text-sm mt-1">Built by Dumb Kid AI</p>
     </div>
-    <div class="flex-1 flex justify-end"> <!-- Theme Toggle Button -->
-      <button 
-        on:click={toggleTheme} 
-        class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-        aria-label="Toggle theme">
-        {#if $theme === 'light'}
-          <Moon class="w-5 h-5" />
-        {:else}
-          <Sun class="w-5 h-5" />
-        {/if}
-      </button>
+    <div class="flex justify-end w-24"> <!-- Added fixed width spacer for button area -->
+      <!-- Spacer, was theme button area -->
     </div>
   </header>
 
@@ -265,7 +276,7 @@
           {#if isLoading}
              <LoaderCircle class="w-5 h-5 animate-spin" /> Generating...
           {:else}
-             <ImageIcon class="w-5 h-5"/> Generate Image
+             <Sparkles class="w-5 h-5"/> Generate Image
           {/if}
       </button>
 
@@ -334,9 +345,50 @@
         class="w-full px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-medium rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 active:bg-gray-300 dark:active:bg-gray-500 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
           Clear All
       </button>
+
+      <!-- Give Feedback Button -->
+      <button
+        on:click={() => showFeedbackModal = true}
+        class="mt-4 w-full flex justify-center items-center gap-2.5 px-5 py-2.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium rounded-lg border border-blue-200 dark:border-blue-700/50 shadow-sm hover:bg-blue-200 dark:hover:bg-blue-800/60 active:bg-blue-300 dark:active:bg-blue-700/70 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+          <MessageSquare class="w-5 h-5"/> Give Feedback
+      </button>
     </div>
 
   </div>
+
+  <!-- Feedback Modal -->
+  {#if showFeedbackModal}
+    <div 
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
+      on:click={() => showFeedbackModal = false} 
+      on:keydown={(e) => e.key === 'Escape' && (showFeedbackModal = false)}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="feedback-modal-title"
+      tabindex="-1" 
+    >
+      <div 
+        class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto" 
+        on:click|stopPropagation
+        on:keydown|stopPropagation
+        role="document"
+        tabindex="0"
+      >
+        <!-- Close Button -->
+        <button 
+          on:click={() => showFeedbackModal = false} 
+          class="absolute top-3 right-3 p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Close feedback form"
+        >
+          <X class="w-5 h-5" />
+        </button>
+
+        <!-- Modal Content -->
+        <h2 id="feedback-modal-title" class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Give Feedback</h2>
+        <FeedbackForm />
+      </div>
+    </div>
+  {/if}
 </div>
 
 <!-- Fullscreen Image Overlay -->
