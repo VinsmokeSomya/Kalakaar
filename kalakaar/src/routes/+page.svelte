@@ -365,6 +365,7 @@
       on:click|stopPropagation
       on:keydown|stopPropagation
       tabindex="-1"
+      role="presentation"
     >
       <img 
         src={generatedImageDataUrl} 
