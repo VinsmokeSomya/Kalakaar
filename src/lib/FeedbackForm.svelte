@@ -117,6 +117,7 @@
 
     <!-- Rating -->
     <div>
+      <!-- svelte-ignore a11y_label_has_associated_control -->
       <label id="rating-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Rating <span class="text-red-500">*</span>
       </label>

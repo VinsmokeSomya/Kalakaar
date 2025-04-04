@@ -359,7 +359,7 @@
       <button
         onclick={handleGenerate}
         disabled={isLoading || !prompt}
-        class="w-full flex justify-center items-center gap-2.5 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+        class="w-full flex justify-center items-center gap-2.5 px-5 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 {isLoading ? 'animate-pulse' : ''}"
         title="Generate image based on drawing and prompt"
       >
           {#if isLoading}
@@ -379,9 +379,13 @@
        <!-- Result Display Area -->
        <div class="p-5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow min-h-[200px] flex flex-col transition-colors duration-300">
          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Result</h3>
-         <div class="flex-grow flex flex-col items-center justify-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+         <div class="flex-grow flex flex-col items-center justify-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-200 dark:border-gray-600 min-h-[150px]">
            {#if isLoading}
-              <LoaderCircle class="w-8 h-8 text-gray-400 dark:text-gray-500 animate-spin"/>
+              <!-- Prominent Loader -->
+              <div class="flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400">
+                <LoaderCircle class="w-10 h-10 animate-spin mb-2"/>
+                <p class="text-sm">Generating your masterpiece...</p>
+              </div>
            {:else if generatedImageDataUrl}
              <div class="relative w-full flex flex-col items-center">
                <img 
@@ -454,19 +458,18 @@
   {#if showFeedbackModal}
     <div 
       class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-      onclick={() => showFeedbackModal = false}
       onkeydown={(e) => { if (e.key === 'Escape') showFeedbackModal = false; }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="feedback-modal-title"
-      tabindex="-1" 
+      tabindex="-1"
     >
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div 
         class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto" 
         onclick={(event) => { event.stopPropagation(); }}
         onkeydown={(event) => { event.stopPropagation(); }}
         role="document"
-        tabindex="0"
       >
         <!-- Close Button -->
         <button 
@@ -489,12 +492,11 @@
 {#if isFullscreenView && generatedImageDataUrl}
   <div 
     class="fixed inset-0 bg-transparent backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-    onclick={() => isFullscreenView = false}
     onkeydown={(e) => { if (e.key === 'Escape') isFullscreenView = false; }}
     role="dialog"
     aria-modal="true"
     aria-label="Fullscreen image view"
-    tabindex="0"
+    tabindex="-1"
   >
     <div class="absolute top-4 right-4">
       <button 
@@ -506,6 +508,7 @@
       </button>
     </div>
     
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div 
       class="max-w-full max-h-full" 
       onclick={(event) => { event.stopPropagation(); }}
