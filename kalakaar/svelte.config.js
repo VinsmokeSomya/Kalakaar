@@ -10,7 +10,9 @@ const config = {
 	kit: {
 		// Use Vercel adapter with explicit configuration and recommended runtime
 		adapter: adapter({
-			runtime: 'nodejs20.x'
+			runtime: 'nodejs20.x',
+			// Explicitly define assets directory relative to the SvelteKit project root (kalakaar)
+			assets: 'static'
 		})
 	}
 };
