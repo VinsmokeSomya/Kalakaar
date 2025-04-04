@@ -6,7 +6,11 @@
     "dev": "cd kalakaar && npm run dev",
     "build": "cd kalakaar && npm run build",
     "start": "cd kalakaar && npm run preview",
-    "lint": "cd kalakaar && npm run lint"
+    "lint": "cd kalakaar && npm run lint",
+    "postinstall": "cd kalakaar && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {},
   "devDependencies": {}
