@@ -3,7 +3,7 @@
   import type CanvasComponentType from '$lib/Canvas.svelte'; 
   import Canvas from '$lib/Canvas.svelte';
   import FeedbackForm from '$lib/FeedbackForm.svelte';
-  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen } from 'lucide-svelte';
+  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen, Highlighter, Feather, SprayCan, Wind, Edit3, Pencil, Droplet, PenTool } from 'lucide-svelte';
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
@@ -66,6 +66,7 @@
   let strokeColor = $state('#000000');
   let lineWidth = $state(5);
   let currentTool: 'pen' | 'eraser' = $state('pen');
+  let currentBrush: 'pen' | 'marker' | 'crayon' | 'spray' | 'airbrush' | 'charcoal' | 'pencil' | 'watercolor' | 'oil' | 'calligraphy' = $state('pen');
   let prompt = $state('');
   let generatedText = $state('');
   let generatedImageDataUrl: string | null = $state(null); // Use $state
@@ -99,10 +100,52 @@
         event.preventDefault(); 
         currentTool = 'eraser';
       }
-      // Pen Tool (P)
+      // Pen Tool / Default Pen Brush (P)
       else if (event.key.toLowerCase() === 'p') {
         event.preventDefault();
-        currentTool = 'pen';
+        currentTool = 'pen'; // Switch to pen tool if eraser was active
+        currentBrush = 'pen'; // Select pen brush
+      }
+      // Other Brush Shortcuts (only if pen tool is active)
+      else if (currentTool === 'pen') {
+        switch (event.key.toLowerCase()) {
+          case 'm':
+            event.preventDefault();
+            currentBrush = 'marker';
+            break;
+          case 'c':
+            event.preventDefault();
+            currentBrush = 'crayon';
+            break;
+          case 's':
+            event.preventDefault();
+            currentBrush = 'spray';
+            break;
+          case 'a':
+            event.preventDefault();
+            currentBrush = 'airbrush';
+            break;
+          case 'h':
+            event.preventDefault();
+            currentBrush = 'charcoal';
+            break;
+          case 'l':
+            event.preventDefault();
+            currentBrush = 'pencil';
+            break;
+          case 'w':
+            event.preventDefault();
+            currentBrush = 'watercolor';
+            break;
+          case 'o':
+            event.preventDefault();
+            currentBrush = 'oil';
+            break;
+          case 'g':
+            event.preventDefault();
+            currentBrush = 'calligraphy';
+            break;
+        }
       }
     }
 
@@ -167,6 +210,33 @@
 <!-- Main container -->
 <div class="min-h-screen w-full dark:bg-gray-900 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-0 flex flex-col items-center font-sans antialiased transition-colors duration-300 relative">
   
+  <!-- Sidebar Group Container -->
+  <div class="group fixed top-0 left-0 h-full z-40"> <!-- Group container -->
+    <!-- Hover Trigger Area -->
+    <div class="absolute top-0 left-0 h-full w-5 cursor-pointer"></div> <!-- Invisible trigger -->
+
+    <!-- Sidebar Content -->
+    <aside class="h-full w-64 bg-white dark:bg-slate-900 shadow-lg p-4 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+      <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Keyboard Shortcuts</h3>
+      <ul class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+        <li><kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Ctrl/Cmd</kbd> + <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Z</kbd>: Undo</li>
+        <li><kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Ctrl/Cmd</kbd> + <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">Y</kbd>: Redo</li>
+        <li class="pt-2 border-t border-gray-200 dark:border-gray-700 mt-2"><strong>Tools:</strong></li>
+        <li class="flex items-center gap-2"><Eraser class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">E</kbd>: Eraser</li>
+        <li class="flex items-center gap-2"><Pen class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">P</kbd>: Pen Brush</li>
+        <li class="flex items-center gap-2"><Highlighter class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">M</kbd>: Marker Brush</li>
+        <li class="flex items-center gap-2"><Feather class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">C</kbd>: Crayon Brush</li>
+        <li class="flex items-center gap-2"><SprayCan class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">S</kbd>: Spray Brush</li>
+        <li class="flex items-center gap-2"><Wind class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">A</kbd>: Airbrush</li>
+        <li class="flex items-center gap-2"><Edit3 class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">H</kbd>: Charcoal Brush</li>
+        <li class="flex items-center gap-2"><Pencil class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">L</kbd>: Pencil Brush</li>
+        <li class="flex items-center gap-2"><Droplet class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">W</kbd>: Watercolor Brush</li>
+        <li class="flex items-center gap-2"><Paintbrush class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">O</kbd>: Oil Brush</li>
+        <li class="flex items-center gap-2"><PenTool class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">G</kbd>: Calligraphy Pen</li>
+      </ul>
+    </aside>
+  </div>
+  
   <!-- Absolutely Positioned Logo -->
   <img src="/kalakar-logo.png" alt="Kalakaar Logo" class="absolute top-4 left-4 h-12 md:h-16 w-auto rounded-lg z-10" />
 
@@ -183,7 +253,7 @@
       <Sun class="w-5 h-5" />
     {/if}
   </button>
-
+  
   <!-- Header -->
   <header class="w-full max-w-[1400px] mb-6 md:mb-10 flex justify-between items-center px-4 pt-8">
     <div class="flex items-center w-24"> <!-- Added fixed width spacer for logo area -->
@@ -194,7 +264,7 @@
         <Paintbrush class="w-7 h-7 sm:w-8 sm:h-8 text-indigo-600"/> कलाkaar
       </h1>
       <p class="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Draw something and bring it to life with AI</p>
-      <p class="text-gray-500 dark:text-gray-500 text-xs sm:text-sm mt-1">Built by Dumb Kid AI</p>
+      <p class="text-gray-500 dark:text-gray-500 text-xs sm:text-sm mt-1">Built by <span class="text-orange-500 font-semibold">Dumb Kid AI</span></p>
     </div>
     <div class="flex justify-end w-24"> <!-- Added fixed width spacer for button area -->
       <!-- Spacer, was theme button area -->
@@ -235,6 +305,140 @@
               title="Eraser Tool (E)"
             >
               <Eraser class="w-5 h-5"/>
+            </button>
+          </div>
+
+          <!-- Brush Type Selection -->
+          <div class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg p-1 flex-wrap">
+            <button
+              onclick={() => currentBrush = 'pen'}
+              class:bg-indigo-100={currentBrush === 'pen'}
+              class:dark:bg-indigo-900={currentBrush === 'pen'}
+              class:text-indigo-700={currentBrush === 'pen'}
+              class:dark:text-indigo-300={currentBrush === 'pen'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Pen Brush"
+              title="Pen Brush (P)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Pen class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'marker'}
+              class:bg-indigo-100={currentBrush === 'marker'}
+              class:dark:bg-indigo-900={currentBrush === 'marker'}
+              class:text-indigo-700={currentBrush === 'marker'}
+              class:dark:text-indigo-300={currentBrush === 'marker'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Marker Brush"
+              title="Marker Brush (M)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Highlighter class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'crayon'}
+              class:bg-indigo-100={currentBrush === 'crayon'}
+              class:dark:bg-indigo-900={currentBrush === 'crayon'}
+              class:text-indigo-700={currentBrush === 'crayon'}
+              class:dark:text-indigo-300={currentBrush === 'crayon'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Crayon Brush"
+              title="Crayon Brush (C)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Feather class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'spray'}
+              class:bg-indigo-100={currentBrush === 'spray'}
+              class:dark:bg-indigo-900={currentBrush === 'spray'}
+              class:text-indigo-700={currentBrush === 'spray'}
+              class:dark:text-indigo-300={currentBrush === 'spray'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Spray Brush"
+              title="Spray Brush (S)"
+              disabled={currentTool === 'eraser'}
+            >
+              <SprayCan class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'airbrush'}
+              class:bg-indigo-100={currentBrush === 'airbrush'}
+              class:dark:bg-indigo-900={currentBrush === 'airbrush'}
+              class:text-indigo-700={currentBrush === 'airbrush'}
+              class:dark:text-indigo-300={currentBrush === 'airbrush'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Airbrush Brush"
+              title="Airbrush Brush (A)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Wind class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'charcoal'}
+              class:bg-indigo-100={currentBrush === 'charcoal'}
+              class:dark:bg-indigo-900={currentBrush === 'charcoal'}
+              class:text-indigo-700={currentBrush === 'charcoal'}
+              class:dark:text-indigo-300={currentBrush === 'charcoal'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Charcoal Brush"
+              title="Charcoal Brush (H)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Edit3 class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'pencil'}
+              class:bg-indigo-100={currentBrush === 'pencil'}
+              class:dark:bg-indigo-900={currentBrush === 'pencil'}
+              class:text-indigo-700={currentBrush === 'pencil'}
+              class:dark:text-indigo-300={currentBrush === 'pencil'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Pencil Brush"
+              title="Pencil Brush (L)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Pencil class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'watercolor'}
+              class:bg-indigo-100={currentBrush === 'watercolor'}
+              class:dark:bg-indigo-900={currentBrush === 'watercolor'}
+              class:text-indigo-700={currentBrush === 'watercolor'}
+              class:dark:text-indigo-300={currentBrush === 'watercolor'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Watercolor Brush"
+              title="Watercolor Brush (W)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Droplet class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'oil'}
+              class:bg-indigo-100={currentBrush === 'oil'}
+              class:dark:bg-indigo-900={currentBrush === 'oil'}
+              class:text-indigo-700={currentBrush === 'oil'}
+              class:dark:text-indigo-300={currentBrush === 'oil'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Oil Brush"
+              title="Oil Brush (O)"
+              disabled={currentTool === 'eraser'}
+            >
+              <Paintbrush class="w-5 h-5"/>
+            </button>
+            <button
+              onclick={() => currentBrush = 'calligraphy'}
+              class:bg-indigo-100={currentBrush === 'calligraphy'}
+              class:dark:bg-indigo-900={currentBrush === 'calligraphy'}
+              class:text-indigo-700={currentBrush === 'calligraphy'}
+              class:dark:text-indigo-300={currentBrush === 'calligraphy'}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Select Calligraphy Pen"
+              title="Calligraphy Pen (G)"
+              disabled={currentTool === 'eraser'}
+            >
+              <PenTool class="w-5 h-5"/>
             </button>
           </div>
 
@@ -333,6 +537,7 @@
                 {strokeColor} 
                 {lineWidth} 
                 {currentTool}
+                {currentBrush}
                 width={1200} 
                 height={675} 
             /> 
