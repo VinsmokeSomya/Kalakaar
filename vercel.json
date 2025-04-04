@@ -1,6 +1,7 @@
 {
   "version": 2,
   "buildCommand": "cd kalakaar && npm run build",
+  "outputDirectory": "kalakaar/.vercel/output",
   "installCommand": "npm ci && cd kalakaar && npm ci",
   "framework": "sveltekit",
   "regions": ["iad1"],
