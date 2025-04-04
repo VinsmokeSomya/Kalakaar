@@ -72,6 +72,49 @@
   let isLoading = $state(false);     // Use $state
   let errorMsg = $state('');       // Use $state
 
+  // --- Keyboard Shortcuts --- 
+  $effect(() => {
+    function handleKeydown(event: KeyboardEvent) {
+      // Ignore shortcuts if focus is on an input/textarea
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        return;
+      }
+
+      // Undo (Ctrl/Cmd + Z)
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault(); // Prevent browser default undo
+        canvasComponent?.undo();
+      }
+      // Redo (Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z)
+      else if (
+        (event.ctrlKey || event.metaKey) && 
+        (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))
+      ) {
+        event.preventDefault(); // Prevent browser default redo
+        canvasComponent?.redo();
+      }
+      // Eraser Tool (E)
+      else if (event.key.toLowerCase() === 'e') {
+        event.preventDefault(); 
+        currentTool = 'eraser';
+      }
+      // Pen Tool (P)
+      else if (event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        currentTool = 'pen';
+      }
+    }
+
+    window.addEventListener('keydown', handleKeydown);
+
+    // Cleanup listener on component destroy
+    return () => {
+      window.removeEventListener('keydown', handleKeydown);
+    };
+  });
+  // --- End Keyboard Shortcuts ---
+
   async function handleGenerate() {
     if (!prompt || isLoading || !canvasComponent) return;
     const currentDrawingData = canvasComponent.getImageDataURL();
