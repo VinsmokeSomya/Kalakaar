@@ -124,7 +124,7 @@
 <div class="min-h-screen w-full dark:bg-gray-900 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 p-0 flex flex-col items-center font-sans antialiased transition-colors duration-300 relative">
   
   <!-- Absolutely Positioned Logo -->
-  <img src="/kalakar-logo.png" alt="Kalakaar Logo" class="absolute top-4 left-4 h-18 w-auto rounded-lg z-10" />
+  <img src="/kalakar-logo.png" alt="Kalakaar Logo" class="absolute top-4 left-4 h-12 md:h-16 w-auto rounded-lg z-10" />
 
   <!-- Absolutely Positioned Theme Toggle -->
   <button 
