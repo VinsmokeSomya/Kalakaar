@@ -8,8 +8,11 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// Use Vercel adapter specifically for Vercel deployments
-		adapter: adapter()
+		// Use Vercel adapter with explicit configuration
+		adapter: adapter({
+			// Use default Vercel output directory
+			runtime: 'nodejs18.x'
+		})
 	}
 };
 
