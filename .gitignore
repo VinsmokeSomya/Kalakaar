@@ -13,12 +13,9 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
+# svelte
+kalakaar/.svelte-kit/
+kalakaar/build/
 
 # misc
 .DS_Store
@@ -38,7 +35,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # app.yaml (Google Cloud deployment config)
 app.yaml

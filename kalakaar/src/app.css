@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force dark mode application */
+@layer base {
+  :root {
+    --foreground-color: #171717;
+    --background-color: #ffffff;
+    --text-color: #171717;
+  }
+  
+  .dark {
+    --foreground-color: #f3f4f6 !important;
+    --background-color: #1f2937 !important;
+    --text-color: #ffffff !important;
+  }
+  
+  html.dark {
+    color-scheme: dark !important;
+  }
+  
+  /* Force dark mode background */
+  html.dark body {
+    background-color: #1f2937 !important;
+    color: #f3f4f6 !important;
+  }
+  
+  /* Force dark mode for critical elements */
+  html.dark .bg-white {
+    background-color: #1f2937 !important;
+  }
+  
+  html.dark .text-gray-800 {
+    color: #f3f4f6 !important;
+  }
+  
+  /* Additional dark mode overrides for specific components */
+  html.dark .dark\:bg-slate-800 {
+    background-color: #1e293b !important;
+  }
+  
+  html.dark .dark\:bg-slate-700 {
+    background-color: #334155 !important;
+  }
+  
+  html.dark .dark\:bg-gray-700 {
+    background-color: #374151 !important;
+  }
+  
+  html.dark .dark\:text-gray-100 {
+    color: #f3f4f6 !important;
+  }
+  
+  html.dark .dark\:text-gray-300 {
+    color: #d1d5db !important;
+  }
+  
+  html.dark .dark\:text-gray-400 {
+    color: #9ca3af !important;
+  }
+  
+  /* Force dark mode for gradient backgrounds */
+  html.dark .bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, #111827, #1f2937, #111827) !important;
+  }
+  
+  /* Fix canvas background in dark mode */
+  html.dark .dark\:bg-gray-300 {
+    background-color: #d1d5db !important;
+  }
+  
+  /* General element styling in dark mode */
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: #1f2937;
+      color: #f3f4f6;
+    }
+  }
+  
+  /* Force button styling in dark mode */
+  html.dark button {
+    color-scheme: dark;
+  }
+  
+  /* Force input styling in dark mode */
+  html.dark input, 
+  html.dark textarea {
+    color-scheme: dark;
+    background-color: #334155;
+    color: #f3f4f6;
+  }
+  
+  /* Force the canvas background */
+  html.dark .relative.bg-white {
+    background-color: #1f2937 !important;
+  }
+}

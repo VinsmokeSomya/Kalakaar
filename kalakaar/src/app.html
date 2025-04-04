@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		%sveltekit.head%
+		<style>
+			/* Forcing dark mode as soon as possible */
+			html.dark {
+				color-scheme: dark;
+				background-color: #111827;
+				color: #f3f4f6;
+			}
+			html.dark body {
+				background-color: #111827;
+				color: #f3f4f6;
+			}
+			html.dark textarea, 
+			html.dark input {
+				color: white !important;
+			}
+			html.dark #prompt-input {
+				color: white !important;
+			}
+			html.dark label {
+				color: white !important;
+			}
+			html.dark label[for="prompt-input"] {
+				color: white !important;
+			}
+		</style>
+		<script>
+			// Simple dark mode initialization
+			try {
+				if (localStorage.theme === 'dark' || 
+					(!localStorage.theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+					document.documentElement.classList.add('dark');
+				} else {
+					document.documentElement.classList.remove('dark');
+				}
+			} catch (e) {
+				console.warn('Theme init error:', e);
+			}
+		</script>
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
