@@ -14,8 +14,8 @@
 /coverage
 
 # svelte
-kalakaar/.svelte-kit/
-kalakaar/build/
+/.svelte-kit/
+/build/
 
 # misc
 .DS_Store
