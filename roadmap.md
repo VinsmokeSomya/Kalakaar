@@ -24,7 +24,7 @@ Expanding the artistic capabilities with more drawing options.
 - [x] **Brush types** - Add different brushes (marker, crayon, spray, etc.)
 - [x] **Color palette** - Expanded color selection with saved favorite colors
 - [x] **Canvas size options** - Allow users to select from different canvas dimensions
-- [ ] **Brush size slider improvements** - Add numerical indicator and preset sizes
+- [-] **Brush size slider improvements** - Add numerical indicator and preset sizes
 - [ ] **Canvas zoom/pan** - Allow users to zoom in for detail work and pan around
 
 ## Milestone 3: AI Enhancement Features
