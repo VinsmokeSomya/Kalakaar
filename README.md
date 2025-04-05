@@ -1,6 +1,6 @@
 # कलाkaar (Kalakaar) - AI-Powered Drawing Assistant
 
-![Kalakaar Demo](https://example.com/demo.gif)
+![kalakar-logo](https://github.com/user-attachments/assets/6ccbcd98-7558-46e2-8693-0bffb7aedf91)
 
 **कलाkaar** (pronounced "Kalakaar") is an interactive drawing application that lets you collaborate with AI to bring your sketches to life. Draw anything, provide a prompt, and watch as Google's Gemini 2.0 AI transforms your creation.
 
