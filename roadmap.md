@@ -46,7 +46,6 @@ Features focused on improving workflow and organization.
 - [ ] **Gallery mode** - Save and browse previous creations
 - [ ] **Project folders** - Organize creations into collections
 - [ ] **Export options** - Additional formats and resolution options
-- [ ] **Image import** - Import images to draw on or edit
 - [ ] **User accounts** - Optional accounts for saving work across devices
 
 ## Milestone 5: Advanced Features
@@ -55,7 +54,7 @@ Features focused on improving workflow and organization.
 Sophisticated features for power users and expanded functionality.
 
 - [ ] **Layers system** - Draw on separate layers for complex compositions
-- [ ] **Text tool** - Add text elements to drawings
+- [-] **Text tool** - Add text elements to drawings
 - [ ] **Shapes tool** - Add basic shapes (circles, squares, lines)
 - [ ] **Templates** - Starting templates for different types of drawings
 - [ ] **Filter effects** - Apply filters to drawings or generated images

@@ -14,7 +14,7 @@
   } = $props<{ 
     strokeColor?: string;
     lineWidth?: number;
-    currentTool?: 'pen' | 'eraser';
+    currentTool?: 'pen' | 'eraser' | 'text';
     currentBrush?: 'pen' | 'marker' | 'crayon' | 'spray' | 'airbrush' | 'charcoal' | 'pencil' | 'watercolor' | 'oil' | 'calligraphy';
     zoomLevel?: number;
     isSpacebarDown?: boolean;
@@ -43,7 +43,7 @@
 
   let resizeObserver: ResizeObserver | null = null;
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{textclick: {x: number, y: number}, clear: void}>();
 
   function handleResize(entries: ResizeObserverEntry[]) {
     if (!entries || entries.length === 0 || !canvasElement || !context) {
@@ -91,7 +91,7 @@
     resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(containerElement);
 
-    canvasElement.addEventListener('mousedown', startDrawing);
+    canvasElement.addEventListener('mousedown', handlePointerDown);
     canvasElement.addEventListener('mousemove', handleMouseMove);
     canvasElement.addEventListener('mouseleave', handleMouseLeave);
     canvasElement.addEventListener('mouseenter', handleMouseEnter);
@@ -107,7 +107,7 @@
         resizeObserver.unobserve(containerElement);
       }
       if (canvasElement) {
-        canvasElement.removeEventListener('mousedown', startDrawing);
+        canvasElement.removeEventListener('mousedown', handlePointerDown);
         canvasElement.removeEventListener('mousemove', handleMouseMove);
         canvasElement.removeEventListener('mouseleave', handleMouseLeave);
         canvasElement.removeEventListener('mouseenter', handleMouseEnter);
@@ -181,42 +181,68 @@
     img.src = history[historyIndex];
   }
 
-  function getCoordinates(event: MouseEvent | TouchEvent): { x: number; y: number; clientX: number; clientY: number } {
+  function getCanvasCoordinates(event: MouseEvent | TouchEvent): { canvasX: number; canvasY: number } {
     const rect = canvasElement?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0, clientX: 0, clientY: 0 };
+    if (!rect) return { canvasX: 0, canvasY: 0 };
 
-    let LclientX, LclientY;
+    let clientX, clientY;
     if (event instanceof TouchEvent) {
-      LclientX = event.touches[0].clientX;
-      LclientY = event.touches[0].clientY;
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
     } else {
-      LclientX = event.clientX;
-      LclientY = event.clientY;
+      clientX = event.clientX;
+      clientY = event.clientY;
     }
-    
-    const canvasX = (LclientX - rect.left - offsetX) / zoomLevel; 
-    const canvasY = (LclientY - rect.top - offsetY) / zoomLevel;
-
-    cursorX = LclientX - rect.left;
-    cursorY = LclientY - rect.top;
-
-    return { x: canvasX, y: canvasY, clientX: LclientX, clientY: LclientY };
+    const canvasX = (clientX - rect.left - offsetX) / zoomLevel; 
+    const canvasY = (clientY - rect.top - offsetY) / zoomLevel;
+    return { canvasX, canvasY };
   }
 
- function startDrawing(event: MouseEvent | TouchEvent) {
+  function getElementCoordinates(event: MouseEvent | TouchEvent): { elementX: number; elementY: number } {
+    const rect = canvasElement?.getBoundingClientRect();
+    if (!rect) return { elementX: 0, elementY: 0 };
+
+    let clientX, clientY;
+    if (event instanceof TouchEvent) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+    const elementX = clientX - rect.left;
+    const elementY = clientY - rect.top;
+    
+    cursorX = elementX;
+    cursorY = elementY;
+    
+    return { elementX, elementY };
+  }
+
+  function handlePointerDown(event: MouseEvent | TouchEvent) {
+    console.log(`[Canvas] handlePointerDown called. Current tool: ${currentTool}`);
     if (!context) return;
-    const { x, y, clientX, clientY } = getCoordinates(event);
+
+    if (currentTool === 'text') {
+      const { elementX, elementY } = getElementCoordinates(event); 
+      console.log(`[Canvas] Text tool active. Dispatching textclick at {x: ${elementX}, y: ${elementY}}`);
+      dispatch('textclick', { x: elementX, y: elementY }); 
+      return;
+    }
+
+    const { canvasX, canvasY } = getCanvasCoordinates(event);
+    const { elementX, elementY } = getElementCoordinates(event);
 
     if (isSpacebarDown) {
         isPanning = true;
-        panStartX = clientX;
-        panStartY = clientY;
+        panStartX = elementX;
+        panStartY = elementY;
         canvasElement?.classList.add('grabbing-cursor');
         return;
     }
     
     isDrawing = true;
-    [lastX, lastY] = [x, y];
+    [lastX, lastY] = [canvasX, canvasY];
 
     if (currentTool === 'pen' && (currentBrush === 'spray' || currentBrush === 'airbrush')) {
       if (sprayAnimationId === null) {
@@ -266,7 +292,7 @@
   function drawSegment(event: MouseEvent | TouchEvent) {
     if (!isDrawing || !context || isPanning) return;
 
-    const { x: currentX, y: currentY } = getCoordinates(event);
+    const { canvasX: currentX, canvasY: currentY } = getCanvasCoordinates(event);
 
     if (event instanceof TouchEvent) {
     }
@@ -442,19 +468,15 @@
   }
 
   function handleMouseMove(event: MouseEvent) {
-    const rect = canvasElement?.getBoundingClientRect();
-    if (!rect) return;
-    
-    cursorX = event.clientX - rect.left;
-    cursorY = event.clientY - rect.top;
+    getElementCoordinates(event);
   }
 
   function handleTouchStart(event: TouchEvent) {
       if (event.touches.length === 1) {
-          if (isSpacebarDown || currentTool) {
+          if (isSpacebarDown || currentTool === 'pen' || currentTool === 'eraser' || currentTool === 'text') { 
             event.preventDefault(); 
           }
-          startDrawing(event);
+          handlePointerDown(event);
       }
   }
 
@@ -497,31 +519,64 @@
     if (tool === 'eraser') {
       return over ? 'eraser-active-cursor' : 'default';
     } 
+    if (tool === 'text' && over) {
+      return 'text-cursor'; 
+    }
+    
     if (!over) return 'default'; 
 
-    if (brush === 'spray' || brush === 'airbrush') {
-      return 'crosshair-cursor';
-    } else if (brush === 'charcoal') {
-      return 'charcoal-cursor';
-    } else if (brush === 'pencil') {
-      return 'pencil-cursor';
-    } else if (brush === 'calligraphy') {
-      return 'calligraphy-cursor';
-    } else if (brush === 'crayon') { 
-      return 'crayon-cursor';
-    } else if (brush === 'marker') { 
-      return 'marker-cursor'; 
-    } else if (brush === 'watercolor') { 
-      return 'watercolor-cursor';
-    } else if (brush === 'oil') { 
-      return 'oil-cursor';
-    } else {
-      return 'pen-cursor';
+    if (tool === 'pen') { 
+        if (brush === 'spray' || brush === 'airbrush') {
+          return 'crosshair-cursor';
+        } else if (brush === 'charcoal') {
+          return 'charcoal-cursor';
+        } else if (brush === 'pencil') {
+          return 'pencil-cursor';
+        } else if (brush === 'calligraphy') {
+          return 'calligraphy-cursor';
+        } else if (brush === 'crayon') { 
+          return 'crayon-cursor';
+        } else if (brush === 'marker') { 
+          return 'marker-cursor'; 
+        } else if (brush === 'watercolor') { 
+          return 'watercolor-cursor';
+        } else if (brush === 'oil') { 
+          return 'oil-cursor';
+        } else {
+          return 'pen-cursor';
+        }
     }
+    
+    return 'default';
   }
 
   export function getCanvasElement(): HTMLCanvasElement | null {
     return canvasElement;
+  }
+
+  export function drawText(text: string, elementX: number, elementY: number, fontSize: number, color: string) {
+    console.log(`[Canvas] drawText called with: text="${text}", x=${elementX}, y=${elementY}, size=${fontSize}, color=${color}`);
+    if (!context || !canvasElement) {
+        console.error('[Canvas] drawText failed: context or canvasElement missing');
+        return;
+    }
+
+    const canvasX = (elementX - offsetX) / zoomLevel;
+    const canvasY = (elementY - offsetY) / zoomLevel;
+    console.log(`[Canvas] Calculated canvas coordinates for text: {x: ${canvasX}, y: ${canvasY}}`);
+
+    context.font = `${fontSize}px sans-serif`;
+    context.fillStyle = color;
+    context.textAlign = 'left';
+    context.textBaseline = 'top';
+    
+    context.globalAlpha = 1.0;
+    context.globalCompositeOperation = 'source-over';
+
+    context.fillText(text, canvasX, canvasY);
+    console.log('[Canvas] fillText executed.');
+
+    saveToHistory();
   }
 
 </script>
@@ -576,6 +631,9 @@
   .default {
       cursor: default;
   }
+  .text-cursor {
+      cursor: text;
+  }
 </style>
 
 <div bind:this={containerElement} class="relative w-full h-full overflow-hidden">
@@ -588,6 +646,11 @@
         transform: translateX(${offsetX}px) translateY(${offsetY}px) scale(${zoomLevel});
     `}
     tabindex="0"
+    onmousedown={handlePointerDown}
+    ontouchstart={handleTouchStart}
+    onmousemove={handleMouseMove}
+    onmouseenter={handleMouseEnter}
+    onmouseleave={handleMouseLeave}
   ></canvas> 
 
   {#if currentTool === 'eraser' && isMouseOverCanvas && !isPanning && !isSpacebarDown}
