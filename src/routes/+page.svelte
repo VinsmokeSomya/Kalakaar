@@ -421,10 +421,22 @@
       } else {
         console.log('No image data received.');
       }
-    } catch (err) {
-      console.error("Gen failed:", err);
-      errorMsg = err instanceof Error ? err.message : 'Unknown error.';
-      generatedImageDataUrl = null;
+    } catch (error: any) {
+      console.error('Error generating image:', error);
+      
+      // Check for specific overload error message
+      if (error instanceof Error && error.message?.includes('The model is overloaded')) {
+          errorMsg = "The AI model is currently busy handling requests. Please wait a moment and try generating again. ✨";
+      } 
+      // Handle other potential errors
+      else if (error instanceof Error) {
+        // Check for potentially sensitive information before displaying full message
+        // For now, display the message, but consider filtering in production
+        errorMsg = `Generation failed: ${error.message}`;
+      } else {
+        errorMsg = 'An unknown error occurred during generation. Please check the console.';
+      }
+      generatedImageDataUrl = null; // Clear any previous image on error
     } finally {
       isLoading = false;
     }
