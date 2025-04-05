@@ -24,17 +24,17 @@ Expanding the artistic capabilities with more drawing options.
 - [x] **Brush types** - Add different brushes (marker, crayon, spray, etc.)
 - [x] **Color palette** - Expanded color selection with saved favorite colors
 - [x] **Canvas size options** - Allow users to select from different canvas dimensions
-- [-] **Brush size slider improvements** - Add numerical indicator and preset sizes
-- [ ] **Canvas zoom/pan** - Allow users to zoom in for detail work and pan around
+- [x] **Brush size slider improvements** - Add numerical indicator and preset sizes
+- [x] **Canvas zoom/pan** - Allow users to zoom in for detail work and pan around
 
 ## Milestone 3: AI Enhancement Features
 *Estimated timeframe: 6-8 weeks*
 
 Features that leverage AI capabilities to enhance the creative process.
 
-- [ ] **Style presets** - Add AI style presets (watercolor, oil painting, cartoon, etc.)
+- [x] **Style presets** - Add AI style presets (watercolor, oil painting, cartoon, etc.)
 - [ ] **Smart color suggestions** - AI-powered color palette suggestions
-- [ ] **Prompt templates** - Categorized prompt starters to help users
+- [x] **Prompt templates** - Categorized prompt starters to help users
 - [ ] **Style transfer** - Apply artistic styles to existing images
 - [ ] **Text-to-drawing assistance** - AI suggests simple drawing elements based on text
 

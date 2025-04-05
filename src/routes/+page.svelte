@@ -3,7 +3,7 @@
   import type CanvasComponentType from '$lib/Canvas.svelte'; 
   import Canvas from '$lib/Canvas.svelte';
   import FeedbackForm from '$lib/FeedbackForm.svelte';
-  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen, Highlighter, Feather, SprayCan, Wind, Edit3, Pencil, Droplet, PenTool } from 'lucide-svelte';
+  import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen, Highlighter, Feather, SprayCan, Wind, Edit3, Pencil, Droplet, PenTool, ZoomIn, ZoomOut, RotateCcw } from 'lucide-svelte';
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
@@ -15,6 +15,12 @@
   // State for fullscreen image modal
   let isFullscreenView = $state(false); // Use $state
   let showFeedbackModal = $state(false); // Use $state
+
+  // --- Pan State ---
+  let isSpacebarDown = $state(false);
+  let offsetX = $state(0);
+  let offsetY = $state(0);
+  // --- End Pan State ---
 
   function toggleTheme() {
     theme.update(current => {
@@ -38,6 +44,13 @@
   onMount(() => {
     // Initialize store based on localStorage/system pref on client-side
     try {
+      // --- Load Custom Presets --- (Moved inside onMount's try block)
+      const savedCustomPresets = localStorage.getItem('customStylePresets');
+      if (savedCustomPresets) {
+        customStylePresets = JSON.parse(savedCustomPresets);
+      }
+      // --- End Load Custom Presets ---
+
       const storedTheme = localStorage.theme;
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       
@@ -57,7 +70,7 @@
       
       console.log('Theme initialized to:', initialTheme, 'classList:', document.documentElement.classList.contains('dark'));
     } catch (e) {
-      console.error('Error initializing theme:', e);
+      console.error('Error initializing theme or custom presets:', e);
     }
   });
   // --- End Theme Store ---
@@ -69,10 +82,32 @@
   let currentTool: 'pen' | 'eraser' = $state('pen');
   let currentBrush: 'pen' | 'marker' | 'crayon' | 'spray' | 'airbrush' | 'charcoal' | 'pencil' | 'watercolor' | 'oil' | 'calligraphy' = $state('pen');
   let prompt = $state('');
+  let showPromptTemplates = $state(false); // State for template visibility
   let generatedText = $state('');
   let generatedImageDataUrl: string | null = $state(null); // Use $state
   let isLoading = $state(false);     // Use $state
   let errorMsg = $state('');       // Use $state
+
+  // --- Zoom State ---
+  const MIN_ZOOM = 0.1; // 10%
+  const MAX_ZOOM = 5;   // 500%
+  const ZOOM_STEP = 0.1;
+  let zoomLevel = $state(1);
+
+  function zoomIn() {
+    zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
+  }
+
+  function zoomOut() {
+    zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
+  }
+
+  function resetZoom() {
+    zoomLevel = 1;
+    offsetX = 0;
+    offsetY = 0;
+  }
+  // --- End Zoom State ---
 
   // --- Canvas Size State ---
   type AspectRatioOption = { label: string; value: string; class: string; title: string }; // value can be string now
@@ -101,11 +136,162 @@
   }
   // --- End Canvas Size State ---
 
+  // --- Style Presets --- (Default)
+  type StylePreset = { name: string; suffix: string; icon?: typeof SvelteComponent }; // Icon is optional
+  const stylePresets: StylePreset[] = [
+    { name: 'Watercolor', suffix: ', watercolor painting style' },
+    { name: 'Oil Painting', suffix: ', oil painting style' },
+    { name: 'Cartoon', suffix: ', cartoon art style' },
+    { name: 'Pixel Art', suffix: ', pixel art style' },
+    { name: 'Sketch', suffix: ', pencil sketch style' },
+    { name: 'Minimalist', suffix: ', minimalist style' },
+    { name: 'Line Art', suffix: ', line art style' },
+    { name: '3D Render', suffix: ', 3D render style' },
+    { name: 'Anime', suffix: ', anime style' },
+    { name: 'Cyberpunk', suffix: ', cyberpunk style' },
+    { name: 'Steampunk', suffix: ', steampunk style' },
+    { name: 'Abstract', suffix: ', abstract style' },
+  ];
+
+  // --- Custom Style Presets --- 
+  type CustomPreset = { suffix: string }; // Simplified for now, maybe add name later
+  let customStylePresets = $state<CustomPreset[]>([]);
+  let newCustomStyleSuffix = $state('');
+
+  // Save custom presets to localStorage whenever they change
+  $effect(() => {
+    // Ensure this only runs after mount (when localStorage is available)
+    if (typeof window !== 'undefined') { 
+        try {
+          localStorage.setItem('customStylePresets', JSON.stringify(customStylePresets));
+        } catch (e) {
+          console.error("Error saving custom style presets:", e);
+        }
+    }
+  });
+
+  function addCustomPreset() {
+    const trimmedSuffix = newCustomStyleSuffix.trim();
+    if (!trimmedSuffix) return; // Don't add empty presets
+
+    // Optional: Add comma prefix if not already there for consistency
+    const suffixToAdd = (trimmedSuffix.startsWith(',') ? '' : ', ') + trimmedSuffix;
+
+    // Check for duplicates (case-insensitive)
+    if (!customStylePresets.some(p => p.suffix.toLowerCase() === suffixToAdd.toLowerCase())) {
+      customStylePresets = [...customStylePresets, { suffix: suffixToAdd }];
+    }
+    newCustomStyleSuffix = ''; // Clear input
+  }
+
+  function deleteCustomPreset(index: number) {
+    customStylePresets = customStylePresets.filter((_, i) => i !== index);
+  }
+
+  // --- Combined Style Application Logic --- (Handles both default and custom)
+  function applyStylePreset(suffix: string) {
+    const trimmedSuffix = suffix.trim().replace(/^,/, '').trim(); // Get the core style text
+    const currentPromptLower = prompt.toLowerCase();
+    const suffixLower = trimmedSuffix.toLowerCase();
+
+    // Check if the core style text already exists in the prompt (case-insensitive)
+    if (currentPromptLower.includes(suffixLower)) {
+      return; // Style already exists, do nothing
+    }
+
+    // Append suffix if it doesn't exist
+    if (prompt.trim() === '') {
+      prompt = trimmedSuffix; // Start with suffix if prompt is empty
+    } else if (/[\s,;]$/.test(prompt.trim())) { 
+      // If prompt ends with whitespace, comma, or semicolon, append suffix (add comma if needed)
+      prompt = prompt.trim() + (suffix.startsWith(',') ? '' : ', ') + trimmedSuffix;
+    } else {
+      // Otherwise, add comma and space before suffix
+      prompt += ', ' + trimmedSuffix;
+    }
+    // Ensure prompt is trimmed after modification
+    prompt = prompt.trim();
+  }
+  // --- End Style Presets --- 
+
+  // --- Prompt Templates Data ---
+  type PromptTemplate = {
+    category: string;
+    prompts: string[];
+  };
+
+  const promptTemplates: PromptTemplate[] = [
+    {
+      category: "Characters",
+      prompts: [
+        "A cute cat wearing a wizard hat",
+        "A brave knight standing on a cliff edge",
+        "A futuristic robot exploring an alien planet",
+        "An old librarian surrounded by magical books",
+        "A robot bartender serving drinks in a sci-fi bar",
+        "A wise old tree spirit in an enchanted forest",
+      ]
+    },
+    {
+      category: "Landscapes",
+      prompts: [
+        "A serene mountain lake at sunrise",
+        "A bustling cyberpunk city street at night",
+        "A magical forest with glowing mushrooms",
+        "A tropical beach with palm trees and clear water",
+        "A futuristic cityscape on Mars",
+        "A cozy village nestled in a snowy mountain range",
+      ]
+    },
+    {
+      category: "Abstract",
+      prompts: [
+        "Geometric shapes floating in vibrant colors",
+        "A swirling vortex of light and energy",
+        "Melting clocks in a surreal landscape",
+        "Explosion of colorful powder",
+        "Fractal patterns in neon colors",
+        "Ink splashes forming chaotic shapes",
+      ]
+    },
+    {
+      category: "Objects & Scenes",
+      prompts: [
+        "A detailed vintage pocket watch on a wooden table",
+        "A spaceship flying through a colorful nebula",
+        "A steaming cup of coffee on a rainy window sill",
+        "A stack of old books in a dusty library corner",
+      ]
+    },
+    // Add more categories and prompts as needed
+  ];
+
+  function applyPromptTemplate(templateText: string) {
+    prompt = templateText; // Replace current prompt
+    showPromptTemplates = false; // Optionally hide templates after selection
+  }
+  // --- End Prompt Templates Data ---
+
   // --- Keyboard Shortcuts --- 
   $effect(() => {
     function handleKeydown(event: KeyboardEvent) {
-      // Ignore shortcuts if focus is on an input/textarea
+      // Track spacebar separately
+      if (event.code === 'Space') {
+        // Only prevent default if spacebar is pressed outside of text inputs
+        const target = event.target as HTMLElement;
+        if (!target || (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA')) {
+            isSpacebarDown = true;
+            event.preventDefault(); // Prevent spacebar scroll
+        }
+      }
+      
+      // Ignore other shortcuts if focus is on an input/textarea or space is down (panning)
       const target = event.target as HTMLElement;
+      if (isSpacebarDown || (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'))) {
+        return;
+      }
+
+      // Ignore shortcuts if focus is on an input/textarea
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
         return;
       }
@@ -175,13 +361,36 @@
             break;
         }
       }
+      
+      // --- NEW Zoom Shortcuts --- 
+      else if (event.key === '+') { // Plus key for Zoom In
+        event.preventDefault();
+        zoomIn();
+      }
+      else if (event.key === '-') { // Minus key for Zoom Out
+        event.preventDefault();
+        zoomOut();
+      }
+      else if (event.key === '0') { // Zero key for Reset Zoom/Pan
+        event.preventDefault();
+        resetZoom();
+      }
+    }
+
+    function handleKeyup(event: KeyboardEvent) {
+      if (event.code === 'Space') {
+          isSpacebarDown = false;
+          // No need to call canvas directly, rely on prop change
+      }
     }
 
     window.addEventListener('keydown', handleKeydown);
+    window.addEventListener('keyup', handleKeyup); // Add keyup listener
 
     // Cleanup listener on component destroy
     return () => {
       window.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('keyup', handleKeyup); // Remove keyup listener
     };
   });
   // --- End Keyboard Shortcuts ---
@@ -260,6 +469,12 @@
         <li class="flex items-center gap-2"><Droplet class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">W</kbd>: Watercolor Brush</li>
         <li class="flex items-center gap-2"><Paintbrush class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">O</kbd>: Oil Brush</li>
         <li class="flex items-center gap-2"><PenTool class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">G</kbd>: Calligraphy Pen</li>
+        
+        <!-- NEW Zoom Shortcuts Section -->
+        <li class="pt-2 border-t border-gray-200 dark:border-gray-700 mt-2"><strong>View:</strong></li>
+        <li class="flex items-center gap-2"><ZoomIn class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">+</kbd>: Zoom In</li>
+        <li class="flex items-center gap-2"><ZoomOut class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">-</kbd>: Zoom Out</li>
+        <li class="flex items-center gap-2"><RotateCcw class="w-4 h-4 inline-block"/> <kbd class="font-mono bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">0</kbd>: Reset Zoom/Pan</li>
       </ul>
     </aside>
   </div>
@@ -302,7 +517,7 @@
   <div class="w-full flex flex-col lg:flex-row items-start justify-center gap-4 md:gap-6 px-4">
 
     <!-- Left Side: Canvas and Controls -->
-    <div class="flex flex-col items-center lg:order-1 w-full max-w-[1200px]">
+    <div class="flex flex-col items-center justify-start p-4 lg:p-6 w-full lg:w-3/5 xl:w-2/3 order-1 lg:order-1">
        
        <!-- Controls Styling -->
        <div class="w-full mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-wrap justify-center items-center gap-x-5 gap-y-3">
@@ -477,12 +692,12 @@
                 </button>
               </div>
 
-              <!-- Width Slider -->
+              <!-- Width Slider with Numerical Indicator -->
               <div 
-                class="flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 w-full mt-2"
+                class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 w-full mt-2"
                 title="Adjust Brush Width"
               >
-            <span class="whitespace-nowrap">Width: <span class="font-semibold">{lineWidth}px</span></span>
+                <span class="whitespace-nowrap">Width: <span class="font-semibold w-6 inline-block text-right">{lineWidth}</span>px</span>
             <input 
               type="range" 
               bind:value={lineWidth} 
@@ -514,6 +729,38 @@
                   {ratio.label}
                 </button>
               {/each}
+            </div>
+          </div>
+
+          <!-- MOVED: Zoom Controls (Vertical Layout) -->
+          <div class="flex flex-col items-center gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Zoom:</span>
+            <div class="flex flex-col items-center gap-1">
+                <button
+                    onclick={zoomIn}
+                    disabled={zoomLevel >= MAX_ZOOM}
+                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                    title="Zoom In (+)"
+                >
+                    <ZoomIn class="w-5 h-5"/>
+                </button>
+                <span class="text-xs font-semibold w-10 text-center tabular-nums" title="Current Zoom">{(zoomLevel * 100).toFixed(0)}%</span>
+                <button
+                    onclick={zoomOut}
+                    disabled={zoomLevel <= MIN_ZOOM}
+                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                    title="Zoom Out (-)"
+                >
+                    <ZoomOut class="w-5 h-5"/>
+                </button>
+                <button
+                    onclick={resetZoom}
+                    disabled={zoomLevel === 1 && offsetX === 0 && offsetY === 0}
+                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors mt-1"
+                    title="Reset Zoom & Pan (0)"
+                >
+                    <RotateCcw class="w-5 h-5"/>
+                </button>
             </div>
           </div>
 
@@ -575,19 +822,27 @@
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
           </button>
+
        </div>
 
-        <!-- Canvas Area - Apply dynamic aspect ratio -->
-        <div class="relative w-full {currentAspectRatio.class} mx-auto bg-white dark:bg-gray-300 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300">
-            <!-- Ensure Canvas component fills the container -->
+        <!-- Canvas Area Container - Apply the "Outer Area" background here -->
+        <div class="relative w-full {currentAspectRatio.class} mx-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300 bg-gray-100 dark:bg-gray-800">
+            <!-- Canvas Component -->
             <Canvas 
                 bind:this={canvasComponent} 
                 {strokeColor} 
                 {lineWidth} 
                 {currentTool}
                 {currentBrush}
+                {zoomLevel}
+                {isSpacebarDown} 
+                bind:offsetX 
+                bind:offsetY 
             /> 
-            <div class="absolute bottom-2 right-2 text-xs text-gray-500 dark:text-gray-600 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">Draw here!</div>
+            <!-- Draw Here Overlay -->
+            {#if !canvasComponent?.isDrawing && !canvasComponent?.hasHistory() && !canvasComponent?.isPanning} 
+                 <!-- ... existing overlay ... -->
+            {/if}
         </div>
     </div>
 
@@ -596,6 +851,14 @@
       <!-- Prompt Input Area -->
       <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-gray-200 dark:border-gray-700 transition-colors duration-300">
          <label for="prompt-input" class="block text-sm font-semibold text-gray-700 dark:text-white mb-2">Enter your prompt:</label>
+          <!-- Prompt Templates Button -->
+         <button 
+             onclick={() => showPromptTemplates = !showPromptTemplates}
+             class="text-xs float-right text-indigo-600 dark:text-indigo-400 hover:underline mb-1 relative -top-1"
+         >
+             {showPromptTemplates ? 'Hide Ideas' : 'Get Prompt Ideas ✨'}
+         </button>
+         <!-- End Prompt Templates Button -->
          <textarea
            id="prompt-input"
            bind:value={prompt}
@@ -604,6 +867,105 @@
            class="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 ease-in-out text-base resize-y placeholder:text-gray-400 dark:placeholder:text-gray-400"
            placeholder="e.g., 'make it look like a water color painting', 'add a cute cat'..."
          ></textarea>
+
+          <!-- Prompt Templates Section (Conditional) -->
+         {#if showPromptTemplates}
+            <div class="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+               <h4 class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Prompt Ideas:</h4>
+               {#each promptTemplates as categoryItem (categoryItem.category)}
+                  <div class="mb-3">
+                      <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">{categoryItem.category}</p>
+                      <div class="flex flex-wrap gap-1.5">
+                          {#each categoryItem.prompts as templatePrompt (templatePrompt)}
+                              <button
+                                  onclick={() => applyPromptTemplate(templatePrompt)}
+                                  class="px-2.5 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-400 text-left"
+                                  title="Use this prompt"
+                              >
+                                  {templatePrompt}
+                              </button>
+                          {/each}
+                      </div>
+                  </div>
+               {/each}
+            </div>
+         {/if}
+         <!-- End Prompt Templates Section -->
+         
+         <!-- Style Preset Buttons (Default + Custom) -->
+         <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 block">Add Style:</span>
+            <!-- Default Styles -->
+            <div class="flex flex-wrap gap-1.5 mb-2"> <!-- Added mb-2 -->
+               {#each stylePresets as preset (preset.name)}
+                 <button
+                    onclick={() => applyStylePreset(preset.suffix)}
+                    class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    title={`Append "${preset.suffix}"`}
+                 >
+                    {preset.name}
+                 </button>
+               {/each}
+            </div>
+            <!-- End Default Styles -->
+            
+            <!-- Saved Custom Styles (Always Visible if any exist) -->
+            {#if customStylePresets.length > 0}
+              <!-- Removed redundant label: <span class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 block">My Styles:</span> -->
+              <div class="flex flex-wrap gap-1.5">
+                  {#each customStylePresets as preset, index (preset.suffix)}
+                    <div class="relative group">
+                       <button
+                          onclick={() => applyStylePreset(preset.suffix)} 
+                          class="pl-2.5 pr-6 py-1 rounded-full text-xs font-medium bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 hover:bg-teal-200 dark:hover:bg-teal-800 transition-colors focus:outline-none focus:ring-1 focus:ring-teal-400 whitespace-nowrap"
+                          title={`Append "${preset.suffix}"`}
+                       >
+                          {preset.suffix.replace(/^,\s*/, '')} <!-- Show without leading comma -->
+                       </button>
+                       <!-- Delete Button (appears on hover) -->
+                       <button 
+                          onclick={() => deleteCustomPreset(index)}
+                          class="absolute top-0 right-0 bottom-0 w-5 flex items-center justify-center text-teal-600 dark:text-teal-400 hover:text-red-600 dark:hover:text-red-400 opacity-50 group-hover:opacity-100 transition-opacity rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"
+                          title="Delete this style"
+                          aria-label="Delete custom style"
+                       >
+                           <X class="w-3 h-3" />
+                       </button>
+                     </div>
+                  {/each}
+              </div>
+            {/if}
+            <!-- End Saved Custom Styles -->
+         </div>
+         <!-- End Combined Style Buttons -->
+
+         <!-- Create New Custom Style Section -->
+         <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+            <!-- Removed Dropdown Trigger Button -->
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 block">Create New Style:</span>
+            <!-- Input to Add New Custom Style -->
+            <div class="flex gap-2">
+                <input 
+                    type="text"
+                    bind:value={newCustomStyleSuffix}
+                    placeholder="Type style suffix & click Add..."
+                    class="flex-grow px-2.5 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 rounded-md focus:ring-1 focus:ring-indigo-400 focus:border-transparent"
+                    onkeydown={(e) => { if(e.key === 'Enter') addCustomPreset() }}
+                />
+                <button
+                    onclick={addCustomPreset}
+                    disabled={!newCustomStyleSuffix.trim()}
+                    class="px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    Add
+                </button>
+            </div>
+            {#if customStylePresets.length === 0}
+                <span class="text-xs text-gray-400 italic mt-1 block">Saved styles will appear above the line.</span>
+            {/if}
+            <!-- Removed Dropdown Content Wrapper -->
+         </div>
+         <!-- End Create New Custom Style Section -->
       </div>
 
       <!-- Generate Button -->
