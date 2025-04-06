@@ -54,7 +54,7 @@ Features focused on improving workflow and organization.
 Sophisticated features for power users and expanded functionality.
 
 - [ ] **Layers system** - Draw on separate layers for complex compositions
-- [ ] **Text tool** - Add text elements to drawings
+- [x] **Text tool** - Add text elements to drawings
 - [ ] **Shapes tool** - Add basic shapes (circles, squares, lines)
 - [ ] **Templates** - Starting templates for different types of drawings
 - [ ] **Filter effects** - Apply filters to drawings or generated images
@@ -75,7 +75,7 @@ Features that enable collaboration and premium experiences.
 Ongoing technical improvements to be implemented across milestones:
 
 - [ ] Performance optimization for large canvases
-- [-] **Improved mobile touch support**
+- [ ] Improved mobile touch support
 - [ ] Offline functionality for basic drawing
 - [ ] Automated backups of in-progress work
 - [ ] Responsive design improvements for various screen sizes
