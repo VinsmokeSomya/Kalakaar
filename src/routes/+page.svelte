@@ -593,335 +593,340 @@
     <!-- Left Side: Canvas and Controls -->
     <div class="flex flex-col items-center justify-start p-4 lg:p-6 w-full lg:w-3/5 xl:w-2/3 order-1 lg:order-1">
        
-       <!-- Controls Styling -->
-       <div class="w-full mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-wrap justify-center items-center gap-x-5 gap-y-3">
-          
-          <!-- NEW: Tools Box Container -->
-          <div class="p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 shadow-sm flex flex-row items-start gap-3"> 
-            <!-- Tool Selection Buttons -->
-            <div class="flex flex-col items-start gap-1">
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Tool:</span>
-              <div class="flex flex-col gap-2 p-1 border border-gray-300 dark:border-gray-600 rounded-lg">
-                <button
-                  onclick={() => { currentTool = 'pen'; isTextInputVisible = false; textInputContent = ''; }}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'pen' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label="Select Pen Tool"  
-                  title="Pen Tool (P)"
+       <!-- Controls Container - Apply Responsive Layout -->
+       <div 
+         class="w-full mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 
+                flex flex-col items-stretch gap-y-4 
+                lg:flex-row lg:flex-wrap lg:justify-center lg:items-start lg:gap-x-5 lg:gap-y-3"
+       >
+           
+           <!-- Tool/Brush/Width Box -->
+           <div class="p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 shadow-sm flex flex-col md:flex-row items-start gap-3">
+             <!-- Tool Selection Buttons -->
+             <div class="flex flex-col items-start gap-1">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Tool:</span>
+                <div class="flex flex-col gap-2 p-1 border border-gray-300 dark:border-gray-600 rounded-lg">
+                  <button
+                    onclick={() => { currentTool = 'pen'; isTextInputVisible = false; textInputContent = ''; }}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'pen' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                    aria-label="Select Pen Tool"  
+                    title="Pen Tool (P)"
+                  >
+                    <Pen class="w-5 h-5"/>
+                  </button>
+                  <button
+                    onclick={() => { currentTool = 'eraser'; isTextInputVisible = false; textInputContent = ''; }}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'eraser' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                    aria-label="Select Eraser Tool"
+                    title="Eraser Tool (E)"
+                  >
+                    <Eraser class="w-5 h-5"/>
+                  </button>
+                  <button
+                    onclick={() => { 
+                      console.log('[Page] Text tool selected'); // Log tool selection
+                      currentTool = 'text'; 
+                      isTextInputVisible = false; 
+                      textInputContent = ''; 
+                    }}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'text' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                    aria-label="Select Text Tool"
+                    title="Text Tool (T)"
+                  >
+                    <TextIcon class="w-5 h-5"/>
+                  </button>
+                </div>
+             </div>
+ 
+             <!-- Container for Brushes and Width -->
+             <div 
+               class="flex flex-col items-start w-full flex-1" 
+               class:opacity-50={currentTool === 'text'} 
+               class:pointer-events-none={currentTool === 'text'}
+             >
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Brushes:</span>
+                <!-- Brush Type Selection Grid -->
+                <div class="grid grid-cols-5 gap-1 p-1 border border-gray-300 dark:border-gray-600 rounded-lg w-full">
+                  <button
+                    onclick={() => currentBrush = 'pen'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'pen' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                    aria-label="Select Pen Brush"
+                    title="Pen Brush (P)"
+                    disabled={currentTool === 'eraser' || currentTool === 'text'}
+                  >
+                    <Pen class="w-5 h-5"/>
+                  </button>
+                  <button
+                    onclick={() => currentBrush = 'marker'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'marker' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                    aria-label="Select Marker Brush"
+                    title="Marker Brush (M)"
+                    disabled={currentTool === 'eraser' || currentTool === 'text'}
+                  >
+                    <Highlighter class="w-5 h-5"/>
+                  </button>
+                  <button
+                    onclick={() => currentBrush = 'crayon'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'crayon' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Crayon Brush"
+                     title="Crayon Brush (C)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                  >
+                      <Feather class="w-5 h-5"/>
+                  </button>
+                   <button
+                    onclick={() => currentBrush = 'spray'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'spray' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Spray Brush"
+                     title="Spray Brush (S)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <SprayCan class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'airbrush'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'airbrush' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Airbrush Brush"
+                     title="Airbrush Brush (A)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <Wind class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'charcoal'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'charcoal' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Charcoal Brush"
+                     title="Charcoal Brush (H)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <Edit3 class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'pencil'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'pencil' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Pencil Brush"
+                     title="Pencil Brush (L)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <Pencil class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'watercolor'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'watercolor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Watercolor Brush"
+                     title="Watercolor Brush (W)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <Droplet class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'oil'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'oil' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Oil Brush"
+                     title="Oil Brush (O)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <Paintbrush class="w-5 h-5"/>
+                   </button>
+                   <button
+                    onclick={() => currentBrush = 'calligraphy'}
+                    class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'calligraphy' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label="Select Calligraphy Pen"
+                     title="Calligraphy Pen (G)"
+                     disabled={currentTool === 'eraser' || currentTool === 'text'}
+                   >
+                      <PenTool class="w-5 h-5"/>
+                   </button>
+                </div>
+ 
+                <!-- Width Slider with Numerical Indicator -->
+                <div 
+                  class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 w-full mt-2"
+                  title="Adjust Brush Width"
                 >
-                  <Pen class="w-5 h-5"/>
+                  <span class="whitespace-nowrap">Width: <span class="font-semibold w-6 inline-block text-right">{lineWidth}</span>px</span>
+                  <input 
+                    type="range" 
+                    bind:value={lineWidth} 
+                    min="1" max="30" step="1" 
+                    class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800 accent-indigo-600 dark:accent-indigo-400"
+                  />
+                </div>
+             </div>
+           </div>
+           
+           <!-- Color Palette -->
+           <ColorPalette bind:value={strokeColor} />
+ 
+           <!-- Aspect Ratio -->
+           <div class="flex flex-col items-start gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aspect Ratio:</span>
+              <div class="grid grid-cols-3 gap-1">
+                 {#each aspectRatios as ratio (ratio.value)}
+                   <button
+                     onclick={() => changeAspectRatio(ratio)}
+                     class={`p-2 rounded-md text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentAspectRatio.value === ratio.value ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
+                     aria-label={ratio.title}
+                     title={ratio.title}
+                   >
+                     {ratio.label}
+                   </button>
+                 {/each}
+              </div>
+           </div>
+ 
+           <!-- Zoom Controls -->
+           <div class="flex flex-col items-center gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg self-center lg:self-auto">
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Zoom:</span>
+              <div class="flex flex-col items-center gap-1">
+                  <button
+                      onclick={zoomIn}
+                      disabled={zoomLevel >= MAX_ZOOM}
+                      class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                      title="Zoom In (+)"
+                  >
+                      <ZoomIn class="w-5 h-5"/>
+                  </button>
+                  <span class="text-xs font-semibold w-10 text-center tabular-nums" title="Current Zoom">{(zoomLevel * 100).toFixed(0)}%</span>
+                  <button
+                      onclick={zoomOut}
+                      disabled={zoomLevel <= MIN_ZOOM}
+                      class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                      title="Zoom Out (-)"
+                  >
+                      <ZoomOut class="w-5 h-5"/>
+                  </button>
+                  <button
+                      onclick={resetZoom}
+                      disabled={zoomLevel === 1 && offsetX === 0 && offsetY === 0}
+                      class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors mt-1"
+                      title="Reset Zoom & Pan (0)"
+                  >
+                      <RotateCcw class="w-5 h-5"/>
+                  </button>
+              </div>
+           </div>
+ 
+           <!-- Action Buttons Group (Undo/Redo/Clear/Download) -->
+           <div class="flex flex-wrap justify-center items-center gap-2 self-center lg:self-auto">
+              <!-- Undo/Redo -->
+              <div class="flex gap-2">
+                <button
+                  onclick={() => canvasComponent?.undo()}
+                  class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
+                  aria-label="Undo"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7v6h6"></path>
+                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                  </svg>
                 </button>
                 <button
-                  onclick={() => { currentTool = 'eraser'; isTextInputVisible = false; textInputContent = ''; }}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'eraser' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label="Select Eraser Tool"
-                  title="Eraser Tool (E)"
+                  onclick={() => canvasComponent?.redo()}
+                  class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
+                  aria-label="Redo"
+                  title="Redo (Ctrl+Y)"
                 >
-                  <Eraser class="w-5 h-5"/>
-                </button>
-                <button
-                  onclick={() => { 
-                    console.log('[Page] Text tool selected'); // Log tool selection
-                    currentTool = 'text'; 
-                    isTextInputVisible = false; 
-                    textInputContent = ''; 
-                  }}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentTool === 'text' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label="Select Text Tool"
-                  title="Text Tool (T)"
-                >
-                  <TextIcon class="w-5 h-5"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 7v6h-6"></path>
+                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+                  </svg>
                 </button>
               </div>
-            </div>
-
-            <!-- Container for Brushes and Width -->
-            <div 
-              class="flex flex-col items-start w-full flex-1" 
-              class:opacity-50={currentTool === 'text'} 
-              class:pointer-events-none={currentTool === 'text'}
-            >
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 ml-1">Brushes:</span>
-              <!-- Brush Type Selection Grid -->
-              <div class="grid grid-cols-5 gap-1 p-1 border border-gray-300 dark:border-gray-600 rounded-lg w-full">
-                <button
-                  onclick={() => currentBrush = 'pen'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'pen' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label="Select Pen Brush"
-                  title="Pen Brush (P)"
-                  disabled={currentTool === 'eraser' || currentTool === 'text'}
-                >
-                  <Pen class="w-5 h-5"/>
-                </button>
-                <button
-                  onclick={() => currentBrush = 'marker'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'marker' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label="Select Marker Brush"
-                  title="Marker Brush (M)"
-                  disabled={currentTool === 'eraser' || currentTool === 'text'}
-                >
-                  <Highlighter class="w-5 h-5"/>
-                </button>
-                <button
-                  onclick={() => currentBrush = 'crayon'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'crayon' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Crayon Brush"
-                   title="Crayon Brush (C)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                >
-                    <Feather class="w-5 h-5"/>
-                </button>
-                 <button
-                  onclick={() => currentBrush = 'spray'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'spray' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Spray Brush"
-                   title="Spray Brush (S)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <SprayCan class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'airbrush'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'airbrush' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Airbrush Brush"
-                   title="Airbrush Brush (A)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <Wind class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'charcoal'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'charcoal' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Charcoal Brush"
-                   title="Charcoal Brush (H)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <Edit3 class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'pencil'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'pencil' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Pencil Brush"
-                   title="Pencil Brush (L)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <Pencil class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'watercolor'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'watercolor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Watercolor Brush"
-                   title="Watercolor Brush (W)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <Droplet class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'oil'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'oil' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Oil Brush"
-                   title="Oil Brush (O)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <Paintbrush class="w-5 h-5"/>
-                 </button>
-                 <button
-                  onclick={() => currentBrush = 'calligraphy'}
-                  class={`p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentBrush === 'calligraphy' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                   aria-label="Select Calligraphy Pen"
-                   title="Calligraphy Pen (G)"
-                   disabled={currentTool === 'eraser' || currentTool === 'text'}
-                 >
-                    <PenTool class="w-5 h-5"/>
-                 </button>
-              </div>
-
-              <!-- Width Slider with Numerical Indicator -->
-              <div 
-                class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 w-full mt-2"
-                title="Adjust Brush Width"
+              <!-- Clear -->
+              <button
+                onclick={() => canvasComponent?.clearCanvas()}
+                class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400 active:bg-red-200 dark:active:bg-red-800/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
+                aria-label="Clear Canvas"
+                title="Clear Canvas"
               >
-                <span class="whitespace-nowrap">Width: <span class="font-semibold w-6 inline-block text-right">{lineWidth}</span>px</span>
-            <input 
-              type="range" 
-              bind:value={lineWidth} 
-              min="1" max="30" step="1" 
-              class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800 accent-indigo-600 dark:accent-indigo-400"
-            />
-              </div>
+                  <Trash2 class="w-5 h-5"/>
+              </button>
+              <!-- Download -->
+              <button
+                onclick={() => {
+                  if (canvasComponent) {
+                    const dataUrl = canvasComponent.getImageDataURL();
+                    if (dataUrl) {
+                      const link = document.createElement('a');
+                      link.download = 'kalakar-drawing.png';
+                      link.href = dataUrl;
+                      link.click();
+                    }
+                  }
+                }}
+                class="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                aria-label="Download Drawing"
+                title="Download Drawing"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </button>
             </div>
-          </div>
-          
-          <!-- New Color Palette Component -->
-          <ColorPalette bind:value={strokeColor} />
-
-          <!-- NEW: Canvas Size/Aspect Ratio Controls (Label + Grid Layout) -->
-          <div class="flex flex-col items-start gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aspect Ratio:</span>
-            <div class="grid grid-cols-3 gap-1">
-              {#each aspectRatios as ratio (ratio.value)}
-                <button
-                  onclick={() => changeAspectRatio(ratio)}
-                  class={`p-2 rounded-md text-xs font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${currentAspectRatio.value === ratio.value ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300' : ''}`}
-                  aria-label={ratio.title}
-                  title={ratio.title}
-                >
-                  {ratio.label}
-                </button>
-              {/each}
-            </div>
-          </div>
-
-          <!-- MOVED: Zoom Controls (Vertical Layout) -->
-          <div class="flex flex-col items-center gap-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Zoom:</span>
-            <div class="flex flex-col items-center gap-1">
-                <button
-                    onclick={zoomIn}
-                    disabled={zoomLevel >= MAX_ZOOM}
-                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                    title="Zoom In (+)"
-                >
-                    <ZoomIn class="w-5 h-5"/>
-                </button>
-                <span class="text-xs font-semibold w-10 text-center tabular-nums" title="Current Zoom">{(zoomLevel * 100).toFixed(0)}%</span>
-                <button
-                    onclick={zoomOut}
-                    disabled={zoomLevel <= MIN_ZOOM}
-                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                    title="Zoom Out (-)"
-                >
-                    <ZoomOut class="w-5 h-5"/>
-                </button>
-                <button
-                    onclick={resetZoom}
-                    disabled={zoomLevel === 1 && offsetX === 0 && offsetY === 0}
-                    class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors mt-1"
-                    title="Reset Zoom & Pan (0)"
-                >
-                    <RotateCcw class="w-5 h-5"/>
-                </button>
-            </div>
-          </div>
-
-          <!-- Undo/Redo Buttons -->
-          <div class="flex gap-2">
-            <button
-              onclick={() => canvasComponent?.undo()}
-              class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
-              aria-label="Undo"
-              title="Undo (Ctrl+Z)"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7v6h6"></path>
-                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
-              </svg>
-            </button>
-            <button
-              onclick={() => canvasComponent?.redo()}
-              class="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
-              aria-label="Redo"
-              title="Redo (Ctrl+Y)"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 7v6h-6"></path>
-                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
-              </svg>
-            </button>
-          </div>
-
-          <button
-            onclick={() => canvasComponent?.clearCanvas()}
-            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-700 dark:hover:text-red-400 active:bg-red-200 dark:active:bg-red-800/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
-            aria-label="Clear Canvas"
-            title="Clear Canvas"
-          >
-              <Trash2 class="w-5 h-5"/>
-          </button>
-
-          <!-- Download Drawing Button -->
-          <button
-            onclick={() => {
-              if (canvasComponent) {
-                const dataUrl = canvasComponent.getImageDataURL();
-                if (dataUrl) {
-                  const link = document.createElement('a');
-                  link.download = 'kalakar-drawing.png';
-                  link.href = dataUrl;
-                  link.click();
-                }
-              }
-            }}
-            class="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-            aria-label="Download Drawing"
-            title="Download Drawing"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </button>
-
        </div>
 
-        <!-- Canvas Area Container - Apply the "Outer Area" background here -->
-        <div class="relative w-full {currentAspectRatio.class} mx-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300 bg-gray-100 dark:bg-gray-800">
-            <!-- Canvas Component -->
-            <Canvas 
-                bind:this={canvasComponent} 
-                {strokeColor} 
-                {lineWidth} 
-                {currentTool}
-                {currentBrush}
-                {zoomLevel}
-                {isSpacebarDown} 
-                bind:offsetX 
-                bind:offsetY 
-                on:textclick={handleCanvasTextClick}
-            /> 
-            <!-- Draw Here Overlay -->
-            {#if !canvasComponent?.isDrawing && !canvasComponent?.hasHistory() && !canvasComponent?.isPanning} 
-                 <!-- ... existing overlay ... -->
-            {/if}
+       <!-- Canvas Area Container -->
+       <div class="relative w-full {currentAspectRatio.class} mx-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden group transition-colors duration-300 bg-gray-100 dark:bg-gray-800">
+           <!-- Canvas Component -->
+           <Canvas 
+               bind:this={canvasComponent} 
+               {strokeColor} 
+               {lineWidth} 
+               {currentTool}
+               {currentBrush}
+               {zoomLevel}
+               {isSpacebarDown} 
+               bind:offsetX 
+               bind:offsetY 
+               on:textclick={handleCanvasTextClick}
+           /> 
+           <!-- Draw Here Overlay -->
+           {#if !canvasComponent?.isDrawing && !canvasComponent?.hasHistory() && !canvasComponent?.isPanning} 
+                <!-- ... existing overlay ... -->
+           {/if}
 
-            <!-- Absolutely Positioned Text Input -->
-            {#if isTextInputVisible}
-              <textarea 
-                 bind:value={textInputContent}
-                 onblur={finalizeText}
-                 onkeydown={(e) => { 
-                     if (e.key === 'Enter' && !e.shiftKey) { 
-                         e.preventDefault(); 
-                         finalizeText(); 
-                     } else if (e.key === 'Escape') {
-                         isTextInputVisible = false;
-                         textInputContent = '';
-                     }
-                 }} 
-                 style={`
-                    position: absolute; 
-                    left: ${textStartX}px; 
-                    top: ${textStartY}px; 
-                    transform: translate(0, -100%);
-                    font-size: ${currentFontSize}px; 
-                    line-height: 1.2; 
-                    color: ${strokeColor};
-                    background-color: rgba(255, 255, 255, 0.8); 
-                    border: 1px dashed gray; 
-                    outline: none;
-                    z-index: 50; 
-                    min-width: 50px; 
-                    min-height: ${currentFontSize * 1.3}px; 
-                    padding: 2px;
-                    resize: none; 
-                    overflow: hidden;
-                    white-space: pre;
-                 `}
-                 class="dark:bg-gray-800/80 dark:text-gray-100 dark:border-gray-500"
-                 aria-label="Text input"
-              ></textarea>
-            {/if}
-        </div>
+           <!-- Absolutely Positioned Text Input -->
+           {#if isTextInputVisible}
+             <textarea 
+                bind:value={textInputContent}
+                onblur={finalizeText}
+                onkeydown={(e) => { 
+                    if (e.key === 'Enter' && !e.shiftKey) { 
+                        e.preventDefault(); 
+                        finalizeText(); 
+                    } else if (e.key === 'Escape') {
+                        isTextInputVisible = false;
+                        textInputContent = '';
+                    }
+                }} 
+                style={`
+                   position: absolute; 
+                   left: ${textStartX}px; 
+                   top: ${textStartY}px; 
+                   transform: translate(0, -100%);
+                   font-size: ${currentFontSize}px; 
+                   line-height: 1.2; 
+                   color: ${strokeColor};
+                   background-color: rgba(255, 255, 255, 0.8); 
+                   border: 1px dashed gray; 
+                   outline: none;
+                   z-index: 50; 
+                   min-width: 50px; 
+                   min-height: ${currentFontSize * 1.3}px; 
+                   padding: 2px;
+                   resize: none; 
+                   overflow: hidden;
+                   white-space: pre;
+                `}
+                class="dark:bg-gray-800/80 dark:text-gray-100 dark:border-gray-500"
+                aria-label="Text input"
+             ></textarea>
+           {/if}
+       </div>
     </div>
 
     <!-- Right Side: Prompt and Result -->
