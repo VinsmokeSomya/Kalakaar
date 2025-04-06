@@ -6,13 +6,27 @@
 
 ## Features
 
-- 🎨 Interactive canvas with customizable brush size and color
-- 🔄 Undo/redo functionality for drawing mistakes
-- 🌙 Dark/light mode toggle
-- 💾 Download your original sketches
-- ✨ AI-powered image generation with Google's Gemini 2.0
-- 🔍 Full-screen view for generated images
-- 📱 Responsive design for desktop and mobile
+- 🎨 **Interactive Canvas:** Draw freely using various tools.
+- ✨ **AI Image Generation:** Describe transformations via text prompt and use Google Gemini to generate images based on your drawing.
+- Tools:
+  - 🖌️ **Multiple Brushes:** Pen, Marker, Crayon, Spray, Airbrush, Charcoal, Pencil, Watercolor, Oil, Calligraphy.
+  - 🌈 **Color Palette:** Select custom colors or choose from predefined swatches.
+  - ✏️ **Width Slider:** Adjust brush/eraser size with a live numerical indicator.
+  - 🧼 **Eraser:** Erase parts of your drawing.
+  - 🇹 **Text Tool:** Add text directly onto the canvas.
+- 🖼️ **Canvas Controls:**
+  - 📐 **Aspect Ratio:** Select from various canvas sizes (16:9, 1:1, 4:3, etc.).
+  - 🔍 **Zoom & Pan:** Zoom in/out and pan the canvas (mouse & touch compatible).
+- ↩️ **Undo/Redo:** Step backward and forward through your drawing actions.
+- 💾 **Download:** Save your original sketch as a PNG image.
+- 💡 **AI Assistance:**
+  - 🏷️ **Style Presets:** Quickly append common style keywords (Watercolor, Cartoon, Pixel Art, etc.) to your prompt.
+  - ⭐ **Custom Styles:** Save and reuse your own frequently used style prompts.
+  - ❓ **Prompt Templates:** Get ideas with categorized prompt starters.
+- 🌙 **Dark/Light Mode:** Switch between themes.
+- 📱 **Responsive Design:** Works on desktop and mobile devices.
+- 🖼️ **Fullscreen View:** View generated images larger.
+- ⌨️ **Keyboard Shortcuts:** Access common tools and actions quickly (viewable in sidebar).
 
 ## Technology Stack
 

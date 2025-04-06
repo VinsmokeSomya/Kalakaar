@@ -2,7 +2,6 @@
   // Explicitly type Canvas component if possible, otherwise use generic SvelteComponent
   import type CanvasComponentType from '$lib/Canvas.svelte'; 
   import Canvas from '$lib/Canvas.svelte';
-  import FeedbackForm from '$lib/FeedbackForm.svelte';
   import { LoaderCircle, Palette, Trash2, Image as ImageIcon, Wand2, Moon, Sun, X, MessageSquare, Sparkles, Paintbrush, Eraser, Pen, Highlighter, Feather, SprayCan, Wind, Edit3, Pencil, Droplet, PenTool, ZoomIn, ZoomOut, RotateCcw, Type as TextIcon } from 'lucide-svelte';
   import type { SvelteComponent } from 'svelte'; // Keep for potential generic use
   import { onMount } from 'svelte';
@@ -15,6 +14,7 @@
   // State for fullscreen image modal
   let isFullscreenView = $state(false); // Use $state
   let showFeedbackModal = $state(false); // Use $state
+  let feedbackFormComponent: any | null = $state(null); // Changed type to any
 
   // --- Pan State ---
   let isSpacebarDown = $state(false);
@@ -30,13 +30,13 @@
       // Apply the theme immediately
       if (newTheme === 'dark') {
         document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark'); // Keep attribute for potential CSS vars
       } else {
         document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light'); // Keep attribute for potential CSS vars
       }
       
-      // Force a full page reload to apply all styles completely
-      window.location.reload();
-      
+      console.log('[Theme] Toggled theme to:', newTheme);
       return newTheme;
     });
   }
@@ -494,6 +494,24 @@
     console.log('[Page] Set isTextInputVisible=true, textStart:', textStartX, textStartY);
   }
 
+  // Effect to load FeedbackForm dynamically when modal is shown
+  $effect(() => {
+      if (showFeedbackModal && !feedbackFormComponent) {
+          import('$lib/FeedbackForm.svelte').then(module => {
+              feedbackFormComponent = module.default;
+              console.log('FeedbackForm component loaded dynamically.');
+          }).catch(err => {
+              console.error('Error loading FeedbackForm component:', err);
+              // Optionally show an error to the user or disable feedback
+          });
+      }
+  });
+
+  // Utility function to stop event propagation
+  function stopPropagation(event: Event) {
+      event.stopPropagation();
+  }
+
 </script>
 
 <svelte:head>
@@ -901,7 +919,6 @@
                  `}
                  class="dark:bg-gray-800/80 dark:text-gray-100 dark:border-gray-500"
                  aria-label="Text input"
-                 autofocus
               ></textarea>
             {/if}
         </div>
@@ -1130,51 +1147,53 @@
 
   <!-- Feedback Modal -->
   {#if showFeedbackModal}
-    <div 
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-      onkeydown={(e) => { if (e.key === 'Escape') showFeedbackModal = false; }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="feedback-modal-title"
-      tabindex="-1"
+    <div class="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm z-40 flex justify-center items-center p-4 transition-opacity duration-300" 
+         onclick={() => showFeedbackModal = false} 
+         onkeydown={(e) => { if (e.key === 'Escape') showFeedbackModal = false; }}
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="feedback-modal-title"
+         tabindex="-1"
     >
-      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div 
-        class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full relative max-h-[90vh] overflow-y-auto" 
-        onclick={(event) => { event.stopPropagation(); }}
-        onkeydown={(event) => { event.stopPropagation(); }}
-        role="document"
+        class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-xl max-w-lg w-full relative" 
+        onclick={stopPropagation} 
       >
-        <!-- Close Button -->
         <button 
-          onclick={() => showFeedbackModal = false} 
-          class="absolute top-3 right-3 p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          aria-label="Close feedback form"
+          onclick={() => showFeedbackModal = false}
+          class="absolute top-2 right-2 p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" 
+          aria-label="Close feedback modal"
         >
           <X class="w-5 h-5" />
         </button>
-
-        <!-- Modal Content -->
-        <h2 id="feedback-modal-title" class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Give Feedback</h2>
-        <FeedbackForm />
-      </div>
-    </div>
-  {/if}
+        <h2 id="feedback-modal-title" class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Give Feedback</h2>
+        
+        <!-- Use direct component rendering with runes -->
+        {#if feedbackFormComponent}
+          <feedbackFormComponent onclose={() => showFeedbackModal = false}></feedbackFormComponent>
+        {:else}
+          <!-- Optional: Show loading state -->
+          <div class="flex justify-center items-center h-40">
+              <LoaderCircle class="w-8 h-8 text-indigo-600 animate-spin" />
+          </div>
+        {/if}
+  </div>
 </div>
+  {/if}
 
 <!-- Fullscreen Image Overlay -->
 {#if isFullscreenView && generatedImageDataUrl}
   <div 
     class="fixed inset-0 bg-transparent backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
-    onkeydown={(e) => { if (e.key === 'Escape') isFullscreenView = false; }}
+      onkeydown={(e) => { if (e.key === 'Escape') isFullscreenView = false; }}
     role="dialog"
     aria-modal="true"
     aria-label="Fullscreen image view"
-    tabindex="-1"
+      tabindex="-1"
   >
     <div class="absolute top-4 right-4">
       <button 
-        onclick={() => isFullscreenView = false} 
+          onclick={() => isFullscreenView = false} 
         class="p-2 rounded-full bg-gray-800/30 text-white hover:bg-gray-800/50 transition-colors"
         aria-label="Close fullscreen view"
       >
@@ -1182,11 +1201,11 @@
       </button>
     </div>
     
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div 
       class="max-w-full max-h-full" 
-      onclick={(event) => { event.stopPropagation(); }}
-      onkeydown={(event) => { event.stopPropagation(); }}
+        onclick={(event) => { event.stopPropagation(); }}
+        onkeydown={(event) => { event.stopPropagation(); }}
       tabindex="-1"
       role="presentation"
     >
@@ -1198,3 +1217,4 @@
     </div>
   </div>
 {/if}
+</div>

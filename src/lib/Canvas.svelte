@@ -36,6 +36,7 @@
   let isPanning = $state(false);
   let panStartX = $state(0);
   let panStartY = $state(0);
+  let isTwoFingerPanning = $state(false);
 
   let history: string[] = [];
   let historyIndex = -1;
@@ -230,18 +231,39 @@
       return;
     }
 
+    if (event instanceof TouchEvent) {
+        if (event.touches.length === 2) {
+            console.log("[Canvas] Two finger touch detected, starting pan.");
+            isPanning = true;
+            isTwoFingerPanning = true;
+            const t1 = event.touches[0];
+            const t2 = event.touches[1];
+            panStartX = (t1.clientX + t2.clientX) / 2;
+            panStartY = (t1.clientY + t2.clientY) / 2;
+            event.preventDefault();
+            return;
+        } else if (event.touches.length !== 1) {
+            return; 
+        }
+    }
+
     const { canvasX, canvasY } = getCanvasCoordinates(event);
     const { elementX, elementY } = getElementCoordinates(event);
 
     if (isSpacebarDown) {
+        console.log("[Canvas] Spacebar pan starting.");
         isPanning = true;
+        isTwoFingerPanning = false;
         panStartX = elementX;
         panStartY = elementY;
         canvasElement?.classList.add('grabbing-cursor');
         return;
     }
     
+    console.log("[Canvas] Starting drawing.");
     isDrawing = true;
+    isPanning = false;
+    isTwoFingerPanning = false;
     [lastX, lastY] = [canvasX, canvasY];
 
     if (currentTool === 'pen' && (currentBrush === 'spray' || currentBrush === 'airbrush')) {
@@ -413,6 +435,7 @@
 
     if (isPanning) {
       isPanning = false;
+      isTwoFingerPanning = false;
       canvasElement?.classList.remove('grabbing-cursor');
     }
     
@@ -422,7 +445,7 @@
   }
 
   function handleGlobalMouseMove(event: MouseEvent) {
-    if (isPanning) {
+    if (isPanning && !isTwoFingerPanning) {
         const { clientX, clientY } = event;
         const dx = clientX - panStartX;
         const dy = clientY - panStartY;
@@ -442,29 +465,36 @@
   }
 
   function handleGlobalTouchMove(event: TouchEvent) {
-    if (isPanning) {
-        event.preventDefault();
-        if (event.touches.length === 1) {
-            const { clientX, clientY } = event.touches[0]; 
-            const dx = clientX - panStartX;
-            const dy = clientY - panStartY;
-            
-            offsetX += dx;
-            offsetY += dy;
+    if (isPanning && isTwoFingerPanning && event.touches.length === 2) {
+        event.preventDefault(); 
+        const t1 = event.touches[0];
+        const t2 = event.touches[1];
+        const currentCentroidX = (t1.clientX + t2.clientX) / 2;
+        const currentCentroidY = (t1.clientY + t2.clientY) / 2;
+        
+        const dx = currentCentroidX - panStartX;
+        const dy = currentCentroidY - panStartY;
+        
+        offsetX += dx;
+        offsetY += dy;
 
-            panStartX = clientX;
-            panStartY = clientY;
-        }
-    } else if (isDrawing) {
-        event.preventDefault();
-        if (event.touches.length === 1) {
-            drawSegment(event);
-        }
-    }
+        panStartX = currentCentroidX;
+        panStartY = currentCentroidY;
+
+    } else if (isDrawing && event.touches.length === 1) {
+        event.preventDefault(); 
+        drawSegment(event);
+    } 
   }
 
   function handleGlobalTouchUp(event: TouchEvent) {
-      stopDrawingActions();
+      if (isPanning && isTwoFingerPanning && event.touches.length < 2) {
+          console.log("[Canvas] Two finger pan ending.");
+          stopDrawingActions();
+      } else if (isDrawing && event.touches.length === 0) {
+          console.log("[Canvas] Single finger drawing ending.");
+          stopDrawingActions();
+      }
   }
 
   function handleMouseMove(event: MouseEvent) {
@@ -472,12 +502,12 @@
   }
 
   function handleTouchStart(event: TouchEvent) {
-      if (event.touches.length === 1) {
-          if (isSpacebarDown || currentTool === 'pen' || currentTool === 'eraser' || currentTool === 'text') { 
-            event.preventDefault(); 
-          }
-          handlePointerDown(event);
+      if (event.touches.length === 1 && (currentTool === 'pen' || currentTool === 'eraser' || currentTool === 'text')) {
+          event.preventDefault(); 
+      } else if (event.touches.length === 2) {
+          event.preventDefault(); 
       }
+      handlePointerDown(event);
   }
 
   function handleMouseEnter() {
