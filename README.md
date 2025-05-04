@@ -66,7 +66,7 @@ kalakaar/
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/kalakaar.git
+   git clone https://github.com/VinsmokeSomya/kalakaar.git
    cd kalakaar
    ```
 
